@@ -1,9 +1,13 @@
 // Configuration globale
 let equityChart = null;
+let riskChart = null;
 let isSessionStarted = false;
 let lastTradeData = null;
 let presetsData = {};
 let selectedPreset = 'balanced';
+let strategiesData = [];
+let selectedStrategy = 'none';
+let strategyParams = {};
 
 // Messages de motivation basés sur les résultats
 const winMessages = [
@@ -25,8 +29,10 @@ const lossMessages = [
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', function() {
     initializeChart();
+    initializeRiskChart();
     setupEventListeners();
     loadPresets();
+    loadStrategies();
     loadStats();
 });
 
@@ -46,7 +52,7 @@ function setupEventListeners() {
     });
     
     // Boutons x1000 (1000 trades)
-    document.querySelectorAll('.x1000-btn').forEach(btn => {
+    document.querySelectorAll('.x1000-btn:not(.special-btn)').forEach(btn => {
         btn.addEventListener('click', function() {
             if (isSessionStarted) {
                 const riskPercent = parseFloat(this.dataset.risk);
@@ -56,8 +62,25 @@ function setupEventListeners() {
         });
     });
     
+    // Bouton spécial x1000 pour les stratégies
+    const specialBtn = document.querySelector('.special-btn');
+    if (specialBtn) {
+        specialBtn.addEventListener('click', function() {
+            if (isSessionStarted) {
+                if (selectedStrategy === 'none') {
+                    alert('⚠️ Veuillez sélectionner une stratégie de Money Management (S1-S20) avant de lancer la simulation.');
+                } else {
+                    executeMultipleTrades(1, 1000); // Le risque sera calculé par la stratégie
+                }
+            }
+        });
+    }
+    
     // Bouton restart
-    document.getElementById('restartBtn').addEventListener('click', showInitialSetup);
+    document.getElementById('restartBtn').addEventListener('click', function() {
+        resetStrategySelection();
+        showInitialSetup();
+    });
     
     // Boutons de preset
     document.querySelectorAll('.preset-btn').forEach(btn => {
@@ -71,6 +94,100 @@ function setupEventListeners() {
             updateDistributionDisplay();
         });
     });
+}
+
+// Charger les stratégies de Money Management
+async function loadStrategies() {
+    try {
+        const response = await fetch('/money-management/strategies/');
+        const data = await response.json();
+        
+        if (data.success) {
+            strategiesData = data.strategies;
+            displayStrategies();
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des stratégies:', error);
+    }
+}
+
+// Afficher les stratégies dans la grille
+function displayStrategies() {
+    const grid = document.getElementById('strategiesGrid');
+    grid.innerHTML = '';
+    
+    strategiesData.forEach((strategy, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'strategy-btn';
+        btn.dataset.strategy = strategy.key;
+        btn.textContent = `S${index + 1}`;
+        btn.title = `${strategy.name}\n${strategy.description}`;
+        
+        btn.addEventListener('click', function() {
+            selectStrategy(strategy.key, strategy, index + 1);
+        });
+        
+        grid.appendChild(btn);
+    });
+}
+
+// Sélectionner une stratégie
+function selectStrategy(strategyKey, strategyInfo, number) {
+    selectedStrategy = strategyKey;
+    
+    // Mettre à jour les boutons actifs
+    document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-strategy="${strategyKey}"]`).classList.add('active');
+    
+    // Afficher les paramètres de la stratégie
+    displayStrategyParams(strategyInfo, number);
+}
+
+// Afficher les paramètres d'une stratégie
+function displayStrategyParams(strategyInfo, number) {
+    const paramsContainer = document.getElementById('strategyParams');
+    paramsContainer.style.display = 'block';
+    
+    let html = `<h4>⚙️ Stratégie S${number}: ${strategyInfo.name}</h4>`;
+    html += `<p style="color: #888; margin-bottom: 15px; font-size: 0.9rem;">${strategyInfo.description}</p>`;
+    
+    // Créer les inputs pour chaque paramètre
+    for (const [paramName, defaultValue] of Object.entries(strategyInfo.params)) {
+        html += `
+            <div class="param-group">
+                <label for="param_${paramName}">${paramName}:</label>
+                <input type="number" 
+                       id="param_${paramName}" 
+                       name="${paramName}" 
+                       value="${defaultValue}" 
+                       step="0.1">
+            </div>
+        `;
+    }
+    
+    paramsContainer.innerHTML = html;
+    
+    // Initialiser strategyParams avec les valeurs par défaut
+    strategyParams = {...strategyInfo.params};
+    
+    // Écouter les changements de paramètres
+    paramsContainer.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', function() {
+            strategyParams[this.name] = parseFloat(this.value);
+        });
+    });
+}
+
+// Réinitialiser la sélection de stratégie
+function resetStrategySelection() {
+    selectedStrategy = 'none';
+    strategyParams = {};
+    
+    // Désactiver tous les boutons de stratégie
+    document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('active'));
+    
+    // Cacher les paramètres
+    document.getElementById('strategyParams').style.display = 'none';
 }
 
 // Charger les presets depuis le serveur
@@ -199,6 +316,12 @@ async function startNewSession() {
 
 // Exécuter plusieurs trades en batch (côté serveur avec progression réelle)
 async function executeMultipleTrades(riskPercent, count) {
+    // Si une stratégie est sélectionnée, utiliser la simulation de stratégie
+    if (selectedStrategy !== 'none') {
+        return executeStrategySimulation(count);
+    }
+    
+    // Sinon, utiliser le risque fixe classique
     // Désactiver tous les boutons pendant l'exécution
     const allButtons = document.querySelectorAll('.risk-btn, .restart-btn');
     allButtons.forEach(btn => btn.disabled = true);
@@ -276,6 +399,95 @@ async function executeMultipleTrades(riskPercent, count) {
     } catch (error) {
         console.error('Erreur lors de l\'exécution multiple:', error);
         outcomeEl.innerHTML = `<div style="color: #e74c3c;">❌ Erreur lors de l'exécution des trades</div>`;
+    } finally {
+        // Réactiver tous les boutons
+        allButtons.forEach(btn => btn.disabled = false);
+    }
+}
+
+// Exécuter une simulation avec stratégie de Money Management
+// Cette fonction exécute les trades par batch côté serveur avec calcul du risque adaptatif
+async function executeStrategySimulation(count) {
+    // Désactiver tous les boutons pendant l'exécution
+    const allButtons = document.querySelectorAll('.risk-btn, .restart-btn');
+    allButtons.forEach(btn => btn.disabled = true);
+    
+    // Afficher la barre de progression
+    const outcomeEl = document.getElementById('outcomeMessage');
+    const strategyInfo = strategiesData.find(s => s.key === selectedStrategy);
+    outcomeEl.innerHTML = `
+        <div style="color: #667eea; margin-bottom: 10px;">🎯 Exécution de ${count} trades avec la stratégie: ${strategyInfo.name}</div>
+        <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 30px; overflow: hidden;">
+            <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                0 / ${count}
+            </div>
+        </div>
+    `;
+    
+    const progressBar = document.getElementById('progressBar');
+    const batchSize = 100; // Exécuter par lots de 100 trades
+    let totalExecuted = 0;
+    let accountCrashed = false;
+    
+    try {
+        // Exécuter les trades par batch
+        while (totalExecuted < count && !accountCrashed) {
+            const remainingTrades = count - totalExecuted;
+            const currentBatchSize = Math.min(batchSize, remainingTrades);
+            
+            // Appeler le nouveau endpoint qui exécute avec la stratégie
+            const response = await fetch('/api/execute-strategy-batch/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    strategy_key: selectedStrategy,
+                    params: strategyParams,
+                    count: currentBatchSize
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                totalExecuted += data.trades_executed;
+                accountCrashed = data.account_crashed;
+                
+                // Mettre à jour la progression
+                const progress = (totalExecuted / count) * 100;
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = `${totalExecuted} / ${count}`;
+                
+                // Mettre à jour les stats et le graphique en temps réel
+                updateStats(data.stats);
+                updateChart(data.history);
+                
+                // Si le compte a crashé, arrêter
+                if (accountCrashed) {
+                    break;
+                }
+            } else {
+                throw new Error(data.error || 'Erreur lors de l\'exécution');
+            }
+        }
+        
+        // Message final selon l'état du compte
+        if (accountCrashed) {
+            outcomeEl.innerHTML = `<div style="color: #e74c3c; font-size: 1.2rem; font-weight: bold;">💀 GAME OVER! Le compte a crashé après ${totalExecuted} trades avec la stratégie ${strategyInfo.name}!</div>`;
+        } else {
+            outcomeEl.innerHTML = `<div style="color: #667eea; font-size: 1.1rem; font-weight: bold;">✅ ${totalExecuted} trades exécutés avec succès avec la stratégie ${strategyInfo.name}!</div>`;
+        }
+        
+        // Animation sur le capital
+        document.getElementById('currentCapital').classList.add('pulse');
+        setTimeout(() => {
+            document.getElementById('currentCapital').classList.remove('pulse');
+        }, 500);
+        
+    } catch (error) {
+        console.error('Erreur lors de la simulation avec stratégie:', error);
+        outcomeEl.innerHTML = `<div style="color: #e74c3c;">❌ Erreur lors de la simulation: ${error.message}</div>`;
     } finally {
         // Réactiver tous les boutons
         allButtons.forEach(btn => btn.disabled = false);
@@ -497,20 +709,276 @@ function initializeChart() {
     });
 }
 
-// Mettre à jour le graphique
+// Mettre à jour le graphique equity curve
 function updateChart(history) {
     if (!history || history.length === 0) {
         return;
     }
     
-    const labels = [0, ...history.map(t => t.trade_number)];
-    const data = [history[0]?.capital_after || 1000];
+    // Labels: numéro de trade
+    const labels = history.map(t => t.trade_number);
     
-    history.forEach(trade => {
-        data.push(trade.capital_after);
-    });
+    // Data: capital après chaque trade
+    const data = history.map(t => t.capital_after);
     
     equityChart.data.labels = labels;
     equityChart.data.datasets[0].data = data;
     equityChart.update();
+    
+    // Mettre à jour aussi le graphique du risque adaptatif
+    updateRiskChart(history);
+}
+
+// Initialiser le graphique du risque adaptatif
+function initializeRiskChart() {
+    const ctx = document.getElementById('riskChart').getContext('2d');
+    riskChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [0],
+            datasets: [
+                {
+                    label: 'Risque (%)',
+                    data: [0],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Drawdown (%)',
+                    data: [0],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.05)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    yAxisID: 'y1'
+                },
+                {
+                    label: 'Pertes Consécutives',
+                    data: [0],
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.05)',
+                    borderWidth: 2,
+                    borderDash: [2, 2],
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    yAxisID: 'y2'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            size: 11
+                        },
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.datasetIndex === 2) {
+                                    // Pertes consécutives (nombre entier)
+                                    label += Math.round(context.parsed.y);
+                                } else {
+                                    // Risque et drawdown (pourcentage)
+                                    label += context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Numéro de Trade',
+                        color: '#888'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#888'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Risque (% du capital)',
+                        color: '#667eea'
+                    },
+                    grid: {
+                        color: 'rgba(102, 126, 234, 0.2)'
+                    },
+                    ticks: {
+                        color: '#667eea',
+                        callback: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    // Pas de reverse: les valeurs négatives doivent descendre
+                    title: {
+                        display: true,
+                        text: 'Drawdown (%)',
+                        color: '#e74c3c'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#e74c3c',
+                        callback: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    }
+                },
+                y2: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Pertes Consécutives',
+                        color: '#f39c12'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#f39c12',
+                        stepSize: 1,
+                        callback: function(value) {
+                            return Math.round(value);
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+}
+
+// Mettre à jour le graphique du risque adaptatif
+function updateRiskChart(history) {
+    if (!history || history.length === 0) {
+        return;
+    }
+    
+    const labels = [];
+    const riskData = [];
+    const drawdownData = [];
+    const consecutiveLossesData = [];
+    
+    // Peak = le plus-haut historique atteint jusqu'à présent
+    let peak = 0;
+    let consecutiveLosses = 0;
+    
+    // DEBUG: Afficher les 5 premiers trades pour vérifier
+    console.log('=== DEBUG DRAWDOWN ===');
+    console.log('Premier trade:', history[0]);
+    console.log('Nombre total de trades:', history.length);
+    
+    // Parcourir l'historique pour construire les données
+    history.forEach((trade, index) => {
+        labels.push(trade.trade_number);
+        riskData.push(parseFloat(trade.risk_percent));
+        
+        // Le capital après ce trade (conversion en nombre car Django renvoie des strings)
+        const currentCapital = parseFloat(trade.capital_after);
+        
+        // Au premier trade, initialiser le peak
+        if (index === 0) {
+            peak = currentCapital;
+            console.log(`Trade ${index + 1}: Capital=${currentCapital}, Peak initialisé=${peak}`);
+        }
+        
+        // Mettre à jour le peak si on atteint un nouveau sommet
+        // Peak_t = max(Peak_{t-1}, C_t)
+        const oldPeak = peak;
+        if (currentCapital > peak) {
+            peak = currentCapital;
+        }
+        
+        // ✅ FORMULE CORRECTE DU DRAWDOWN ACTUEL :
+        // DD_t = (C_t - Peak_t) / Peak_t
+        // 
+        // Si C_t = Peak_t (nouveau plus haut) → DD = 0%
+        // Si C_t < Peak_t (en dessous du peak) → DD < 0% (négatif)
+        const drawdown = ((currentCapital - peak) / peak) * 100;
+        drawdownData.push(drawdown);
+        
+        // Debug pour les 5 premiers et derniers trades
+        if (index < 5 || index >= history.length - 5) {
+            console.log(`Trade ${index + 1}: Capital=${currentCapital.toFixed(2)}, Peak=${peak.toFixed(2)}, DD=${drawdown.toFixed(2)}%`);
+        }
+        
+        // Calculer les pertes consécutives (basé sur la variation du capital)
+        if (index > 0) {
+            const previousCapital = history[index - 1].capital_after;
+            if (currentCapital < previousCapital) {
+                consecutiveLosses++;
+            } else {
+                consecutiveLosses = 0;
+            }
+        }
+        consecutiveLossesData.push(consecutiveLosses);
+    });
+    
+    console.log('Peak final:', peak);
+    console.log('Drawdown min:', Math.min(...drawdownData).toFixed(2) + '%');
+    console.log('Drawdown max:', Math.max(...drawdownData).toFixed(2) + '%');
+    console.log('======================');
+    
+    // Mettre à jour le graphique
+    riskChart.data.labels = labels;
+    riskChart.data.datasets[0].data = riskData;
+    riskChart.data.datasets[1].data = drawdownData;
+    riskChart.data.datasets[2].data = consecutiveLossesData;
+    riskChart.update();
 }

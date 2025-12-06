@@ -48,6 +48,19 @@
                     <button class="risk-btn x1000-btn" data-risk="10" data-multiplier="1000">10% x1000</button>
                     <button class="risk-btn x1000-btn" data-risk="15" data-multiplier="1000">15% x1000</button>
                     <button class="risk-btn x1000-btn" data-risk="20" data-multiplier="1000">20% x1000</button>
+                    <button class="risk-btn x1000-btn special-btn">x1000</button>
+                </div>
+
+                <!-- Stratégies de Money Management -->
+                <div class="strategies-section">
+                    <div class="strategies-grid" id="strategiesGrid">
+                        <!-- Les stratégies S1-S20 seront chargées ici -->
+                    </div>
+                </div>
+
+                <!-- Paramètres de la stratégie sélectionnée -->
+                <div class="strategy-params" id="strategyParams" style="display: none;">
+                    <!-- Les paramètres de la stratégie sélectionnée apparaîtront ici -->
                 </div>
 
                 <!-- Paramètres initiaux -->
@@ -123,13 +136,22 @@
                     </div>
                 </div>
 
-                <!-- Graphique -->
+                <!-- Graphique Equity Curve -->
                 <div class="chart-container">
                     <div class="chart-header">
                         <span>Equity Curve</span>
                         <span class="chart-source">MMS.com</span>
                     </div>
                     <canvas id="equityChart"></canvas>
+                </div>
+
+                <!-- Graphique du Risque Adaptatif -->
+                <div class="chart-container" style="margin-top: 20px;">
+                    <div class="chart-header">
+                        <span>📊 Risque Adaptatif en fonction des Trades</span>
+                        <span class="chart-source">MMS.com</span>
+                    </div>
+                    <canvas id="riskChart"></canvas>
                 </div>
 
                 <!-- Statistiques détaillées -->

@@ -147,7 +147,7 @@ def execute_trade(request):
             
             # Récupérer l'historique pour le graphique
             trades_history = list(trading_session.trades.values(
-                'trade_number', 'capital_after'
+                'trade_number', 'capital_after', 'risk_percent'
             ).order_by('trade_number'))
             
             return JsonResponse({
@@ -270,7 +270,7 @@ def execute_batch_trades(request):
             
             # Récupérer l'historique pour le graphique
             trades_history = list(trading_session.trades.values(
-                'trade_number', 'capital_after'
+                'trade_number', 'capital_after', 'risk_percent'
             ).order_by('trade_number'))
             
             return JsonResponse({
@@ -302,7 +302,7 @@ def get_stats(request):
         
         # Récupérer l'historique pour le graphique
         trades_history = list(trading_session.trades.values(
-            'trade_number', 'capital_after'
+            'trade_number', 'capital_after', 'risk_percent'
         ).order_by('trade_number'))
         
         return JsonResponse({

@@ -15,8 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from home import views
+from home import strategy_views  # Import pour les vues de stratégies
 
 urlpatterns = [
     path('', views.simulator_view, name='home'),
@@ -24,6 +25,8 @@ urlpatterns = [
     path('api/start-session/', views.start_session, name='start_session'),
     path('api/execute-trade/', views.execute_trade, name='execute_trade'),
     path('api/execute-batch-trades/', views.execute_batch_trades, name='execute_batch_trades'),
+    path('api/execute-strategy-batch/', strategy_views.execute_strategy_batch, name='execute_strategy_batch'),  # Nouveau endpoint
     path('api/get-stats/', views.get_stats, name='get_stats'),
+    path('money-management/', include('money_management.urls')),
     path('admin/', admin.site.urls),
 ]

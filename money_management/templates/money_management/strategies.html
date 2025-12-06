@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Management - 20 Stratégies Adaptatives</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .strategies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .strategy-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        .strategy-card.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .strategy-number {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .strategy-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .strategy-description {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            margin-bottom: 10px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .stat-value.positive {
+            color: #28a745;
+        }
+
+        .stat-value.negative {
+            color: #dc3545;
+        }
+
+        .chart-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Money Management Adaptatif</h1>
+        <p class="subtitle">20 Stratégies pour Optimiser Votre Gestion du Risque</p>
+
+        <div class="strategies-grid" id="strategiesGrid">
+            <!-- Les stratégies seront chargées ici dynamiquement -->
+        </div>
+
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Simulation en cours... (1000 trades)</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="results-section" id="resultsSection">
+            <button class="back-button" onclick="showStrategies()">← Retour aux stratégies</button>
+            
+            <div class="results-header" id="resultsHeader">
+                <h2 id="strategyTitle"></h2>
+                <p id="strategyDesc"></p>
+            </div>
+
+            <div class="results-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Capital Initial</div>
+                    <div class="stat-value" id="capitalInitial">1000.00 €</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Capital Final</div>
+                    <div class="stat-value" id="capitalFinal">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Performance</div>
+                    <div class="stat-value" id="performance">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Drawdown Max</div>
+                    <div class="stat-value negative" id="drawdownMax">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Gain Moyen</div>
+                    <div class="stat-value" id="gainMoyen">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Écart-Type</div>
+                    <div class="stat-value" id="ecartType">-</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="equityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let strategies = [];
+        let currentChart = null;
+
+        // Charger les stratégies au démarrage
+        async function loadStrategies() {
+            try {
+                const response = await fetch('/money-management/strategies/');
+                const data = await response.json();
+                
+                if (data.success) {
+                    strategies = data.strategies;
+                    displayStrategies();
+                }
+            } catch (error) {
+                showError('Erreur lors du chargement des stratégies: ' + error.message);
+            }
+        }
+
+        // Afficher les stratégies dans la grille
+        function displayStrategies() {
+            const grid = document.getElementById('strategiesGrid');
+            grid.innerHTML = '';
+
+            strategies.forEach((strategy, index) => {
+                const card = document.createElement('div');
+                card.className = 'strategy-card';
+                card.innerHTML = `
+                    <div class="strategy-number">Stratégie ${index + 1}</div>
+                    <div class="strategy-name">${strategy.name}</div>
+                    <div class="strategy-description">${strategy.description}</div>
+                `;
+                card.onclick = () => runStrategy(strategy.key);
+                grid.appendChild(card);
+            });
+        }
+
+        // Exécuter une stratégie
+        async function runStrategy(strategyKey) {
+            // Cacher les stratégies et afficher le spinner
+            document.getElementById('strategiesGrid').style.display = 'none';
+            document.getElementById('loadingSpinner').classList.add('show');
+            document.getElementById('resultsSection').classList.remove('show');
+            document.getElementById('errorMessage').classList.remove('show');
+
+            try {
+                const response = await fetch(`/money-management/simulate/${strategyKey}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        initial_capital: 1000,
+                        n_trades: 1000
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Erreur inconnue');
+                    document.getElementById('strategiesGrid').style.display = 'grid';
+                }
+            } catch (error) {
+                showError('Erreur lors de la simulation: ' + error.message);
+                document.getElementById('strategiesGrid').style.display = 'grid';
+            } finally {
+                document.getElementById('loadingSpinner').classList.remove('show');
+            }
+        }
+
+        // Afficher les résultats
+        function displayResults(data) {
+            // Mettre à jour le titre et la description
+            document.getElementById('strategyTitle').textContent = data.strategy_name;
+            document.getElementById('strategyDesc').textContent = data.description;
+
+            // Calculer la performance
+            const performance = ((data.capital_final - data.capital_initial) / data.capital_initial) * 100;
+
+            // Mettre à jour les stats
+            document.getElementById('capitalFinal').textContent = data.capital_final.toFixed(2) + ' €';
+            document.getElementById('capitalFinal').className = 'stat-value ' + (performance >= 0 ? 'positive' : 'negative');
+            
+            document.getElementById('performance').textContent = (performance >= 0 ? '+' : '') + performance.toFixed(2) + '%';
+            document.getElementById('performance').className = 'stat-value ' + (performance >= 0 ? 'positive' : 'negative');
+            
+            document.getElementById('drawdownMax').textContent = data.drawdown_max.toFixed(2) + '%';
+            document.getElementById('gainMoyen').textContent = data.moyenne.toFixed(2) + ' €';
+            document.getElementById('ecartType').textContent = data.ecart_type.toFixed(2) + ' €';
+
+            // Créer le graphique
+            createEquityChart(data.equity_curve);
+
+            // Afficher la section des résultats
+            document.getElementById('resultsSection').classList.add('show');
+        }
+
+        // Créer le graphique de l'equity curve
+        function createEquityChart(equityCurve) {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+
+            // Détruire le graphique précédent s'il existe
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: equityCurve.map((_, i) => i),
+                    datasets: [{
+                        label: 'Capital (€)',
+                        data: equityCurve,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Évolution du Capital (1000 trades)',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Capital (€)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Nombre de Trades'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Afficher un message d'erreur
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        // Retour aux stratégies
+        function showStrategies() {
+            document.getElementById('strategiesGrid').style.display = 'grid';
+            document.getElementById('resultsSection').classList.remove('show');
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        // Charger les stratégies au chargement de la page
+        loadStrategies();
+    </script>
+</body>
+</html>
