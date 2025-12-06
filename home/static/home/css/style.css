@@ -1,0 +1,582 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+h1 {
+    font-size: 2rem;
+    color: #4CAF50;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    font-size: 0.95rem;
+    color: #b0b0b0;
+    line-height: 1.6;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.main-content {
+    display: grid;
+    gap: 20px;
+}
+
+/* Boutons de contrôle */
+.controls-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.x1000-buttons {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-btn, .restart-btn {
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+}
+
+.risk-btn {
+    background: linear-gradient(135deg, #555 0%, #666 100%);
+    color: white;
+}
+
+.risk-btn:hover {
+    background: linear-gradient(135deg, #666 0%, #777 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.risk-btn:active {
+    transform: translateY(0);
+}
+
+.x1000-btn {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+    font-size: 0.9rem;
+}
+
+.x1000-btn:hover {
+    background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+}
+
+.x1000-btn:disabled {
+    background: linear-gradient(135deg, #555 0%, #444 100%);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.risk-btn:disabled, .restart-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
+}
+
+.restart-btn {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+.restart-btn:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: translateY(-2px);
+}
+
+/* Configuration initiale */
+.initial-setup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.initial-setup.hidden {
+    display: none;
+}
+
+.setup-content {
+    background: linear-gradient(135deg, #2d2d44 0%, #1e1e2e 100%);
+    padding: 40px;
+    border-radius: 15px;
+    border: 2px solid #4CAF50;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.setup-content h3 {
+    color: #4CAF50;
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.setup-section {
+    margin-bottom: 25px;
+}
+
+.setup-content label {
+    display: block;
+    margin-bottom: 10px;
+    color: #b0b0b0;
+    font-weight: bold;
+}
+
+.setup-content input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.2rem;
+    border: 2px solid #555;
+    border-radius: 8px;
+    background: #1e1e2e;
+    color: white;
+    text-align: center;
+}
+
+.preset-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 15px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.preset-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+}
+
+.preset-btn.active {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4CAF50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+}
+
+.preset-name {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.preset-exp {
+    font-size: 1.1rem;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.preset-btn[data-preset="aggressive"] .preset-exp {
+    color: #e74c3c;
+}
+
+.distribution-details {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.details-title {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.details-content {
+    font-size: 0.95rem;
+    color: #b0b0b0;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.details-exp {
+    font-size: 1rem;
+    color: #fff;
+}
+
+.details-exp span {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.start-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.start-btn:hover {
+    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* Statistiques et graphique */
+.stats-chart-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.stat-value.positive {
+    color: #4CAF50;
+}
+
+.stat-value.negative {
+    color: #e74c3c;
+}
+
+/* Résultat du trade */
+.trade-outcome {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.outcome-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.outcome-message {
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #b0b0b0;
+    line-height: 1.6;
+}
+
+/* Graphique */
+.chart-container {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    color: #888;
+}
+
+.chart-source {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+canvas {
+    width: 100% !important;
+    height: 300px !important;
+}
+
+/* Statistiques détaillées */
+.detailed-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item .stat-label {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.stat-item .stat-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.pulse {
+    animation: pulse 0.5s ease;
+}
+
+/* Distribution des issues */
+.outcome-distribution {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+}
+
+.distribution-title {
+    color: #4CAF50;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.distribution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.outcome-item {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.outcome-item.win {
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.outcome-item.loss {
+    border-color: rgba(231, 76, 60, 0.3);
+}
+
+.outcome-item.loss.severe {
+    border-color: rgba(231, 76, 60, 0.6);
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.outcome-item.jackpot {
+    border-color: rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.05);
+}
+
+.outcome-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.outcome-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.outcome-item.win .outcome-label {
+    color: #4CAF50;
+}
+
+.outcome-item.loss .outcome-label {
+    color: #e74c3c;
+}
+
+.outcome-item.jackpot .outcome-label {
+    color: #FFD700;
+}
+
+.outcome-value {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.outcome-value > span:first-child {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.outcome-expected {
+    font-size: 0.75rem;
+    color: #666;
+    font-style: italic;
+}
+
+.expectation-info {
+    text-align: center;
+    padding: 15px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #b0b0b0;
+    font-size: 0.95rem;
+}
+
+.expectation-info strong {
+    color: #4CAF50;
+}
+
+.expectation-info.success {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.expectation-info.success strong {
+    color: #4CAF50;
+}
+
+.expectation-info.warning {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: rgba(231, 76, 60, 0.3);
+}
+
+.expectation-info.warning strong {
+    color: #e74c3c;
+}
+
+.expectation-info small {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .subtitle {
+        font-size: 0.85rem;
+    }
+    
+    .risk-buttons {
+        gap: 8px;
+    }
+    
+    .risk-btn, .restart-btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        min-width: 70px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 1.4rem;
+    }
+}

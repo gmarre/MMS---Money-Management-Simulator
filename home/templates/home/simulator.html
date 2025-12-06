@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMS - Money Management Simulator</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home/css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MMS TRADING SIMULATOR AND EQUITY CURVE SIMULATOR</h1>
+            <p class="subtitle">
+                ⓘ Test your Money Management by Playing with the Trading Simulator! This trading game allows you to improve your risk management by influencing the portion of capital you risk. You will thus learn by playing the usefulness of properly gauging your risk and having solid money management with this equity curve simulator. Simply choose the portion of capital you wish to risk below.
+            </p>
+        </header>
+
+        <div class="main-content">
+            <!-- Boutons de contrôle du risque -->
+            <div class="controls-section">
+                <div class="risk-buttons">
+                    <button class="risk-btn" data-risk="0.25">0.25%</button>
+                    <button class="risk-btn" data-risk="0.5">0.5%</button>
+                    <button class="risk-btn" data-risk="0.75">0.75%</button>
+                    <button class="risk-btn" data-risk="0.853">0.853%</button>
+                    <button class="risk-btn" data-risk="1">1%</button>
+                    <button class="risk-btn" data-risk="1.5">1.5%</button>
+                    <button class="risk-btn" data-risk="2">2%</button>
+                    <button class="risk-btn" data-risk="3">3%</button>
+                    <button class="risk-btn" data-risk="5">5%</button>
+                    <button class="risk-btn" data-risk="10">10%</button>
+                    <button class="risk-btn" data-risk="15">15%</button>
+                    <button class="risk-btn" data-risk="20">20%</button>
+                    <button class="restart-btn" id="restartBtn">Restart</button>
+                </div>
+                <div class="risk-buttons x1000-buttons">
+                    <button class="risk-btn x1000-btn" data-risk="0.25" data-multiplier="1000">0.25% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="0.5" data-multiplier="1000">0.5% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="0.75" data-multiplier="1000">0.75% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="0.853" data-multiplier="1000">0.853% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="1" data-multiplier="1000">1% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="1.5" data-multiplier="1000">1.5% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="2" data-multiplier="1000">2% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="3" data-multiplier="1000">3% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="5" data-multiplier="1000">5% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="10" data-multiplier="1000">10% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="15" data-multiplier="1000">15% x1000</button>
+                    <button class="risk-btn x1000-btn" data-risk="20" data-multiplier="1000">20% x1000</button>
+                </div>
+
+                <!-- Paramètres initiaux -->
+                <div class="initial-setup" id="initialSetup">
+                    <div class="setup-content">
+                        <h3>⚙️ Configuration de la Simulation</h3>
+                        
+                        <div class="setup-section">
+                            <label for="initialCapital">Capital initial (€):</label>
+                            <input type="number" id="initialCapital" value="1000" min="100" step="100">
+                        </div>
+
+                        <div class="setup-section">
+                            <label>Distribution des probabilités:</label>
+                            <div class="preset-selector">
+                                <button class="preset-btn active" data-preset="balanced">
+                                    <div class="preset-name">📊 Équilibré</div>
+                                    <div class="preset-exp">+0.27R</div>
+                                </button>
+                                <button class="preset-btn" data-preset="aggressive">
+                                    <div class="preset-name">⚡ Agressif</div>
+                                    <div class="preset-exp">-0.18R</div>
+                                </button>
+                                <button class="preset-btn" data-preset="conservative">
+                                    <div class="preset-name">🛡️ Conservateur</div>
+                                    <div class="preset-exp">+0.55R</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="setup-section distribution-details" id="distributionDetails">
+                            <div class="details-title">Distribution sélectionnée:</div>
+                            <div class="details-content" id="distributionDesc">
+                                12×(-1R), 2×(-5R), 3×(+2R), 2×(+3R), 1×(+4R), 1×(+5R), 1×(+9R)
+                            </div>
+                            <div class="details-exp">
+                                Espérance: <span id="expectedValue">+0.27R</span> par trade
+                            </div>
+                        </div>
+
+                        <button id="startBtn" class="start-btn">🚀 Commencer la Simulation</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques et graphique -->
+            <div class="stats-chart-section">
+                <!-- Statistiques principales -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Capital</div>
+                        <div class="stat-value" id="currentCapital">€1000.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Drawdown</div>
+                        <div class="stat-value negative" id="drawdown">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Performance</div>
+                        <div class="stat-value positive" id="performance">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Number of Trades</div>
+                        <div class="stat-value" id="numTrades">0</div>
+                    </div>
+                </div>
+
+                <!-- Résultat du trade -->
+                <div class="trade-outcome">
+                    <div class="outcome-label">Outcome of the Trade</div>
+                    <div class="outcome-message" id="outcomeMessage">
+                        Click on a risk percentage to start trading
+                    </div>
+                </div>
+
+                <!-- Graphique -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <span>Equity Curve</span>
+                        <span class="chart-source">MMS.com</span>
+                    </div>
+                    <canvas id="equityChart"></canvas>
+                </div>
+
+                <!-- Statistiques détaillées -->
+                <div class="detailed-stats">
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <div class="stat-label">Risk (%)</div>
+                            <div class="stat-value" id="lastRisk">0%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Risk ($)</div>
+                            <div class="stat-value" id="lastRiskAmount">€0.00</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Profit or Loss</div>
+                            <div class="stat-value" id="lastProfitLoss">€0.00</div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <div class="stat-label">Consecutive Wins</div>
+                            <div class="stat-value positive" id="consecutiveWins">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Consecutive Losses</div>
+                            <div class="stat-value negative" id="consecutiveLosses">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Success Rate</div>
+                            <div class="stat-value" id="successRate">0%</div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <div class="stat-label">Max Capital</div>
+                            <div class="stat-value" id="maxCapital">€1000.00</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Max Drawdown</div>
+                            <div class="stat-value negative" id="maxDrawdown">0%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Max Perf.</div>
+                            <div class="stat-value positive" id="maxPerf">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution des issues -->
+                <div class="outcome-distribution">
+                    <h3 class="distribution-title">Distribution des Issues (sur 22 possibles)</h3>
+                    <div class="distribution-grid">
+                        <div class="outcome-item loss">
+                            <div class="outcome-label">Perte -1R</div>
+                            <div class="outcome-value">
+                                <span id="outcome-1">0</span>
+                                <span class="outcome-expected">(attendu: 12/22 = 54.5%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item loss">
+                            <div class="outcome-label">Perte -2R</div>
+                            <div class="outcome-value">
+                                <span id="outcome-2">0</span>
+                                <span class="outcome-expected">(attendu: 12/22 = 54.5%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item loss severe">
+                            <div class="outcome-label">Perte -5R</div>
+                            <div class="outcome-value">
+                                <span id="outcome-5">0</span>
+                                <span class="outcome-expected">(attendu: 2/22 = 9.1%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item win">
+                            <div class="outcome-label">Gain +2R</div>
+                            <div class="outcome-value">
+                                <span id="outcome2">0</span>
+                                <span class="outcome-expected">(attendu: 3/22 = 13.6%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item win">
+                            <div class="outcome-label">Gain +3R</div>
+                            <div class="outcome-value">
+                                <span id="outcome3">0</span>
+                                <span class="outcome-expected">(attendu: 2/22 = 9.1%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item win">
+                            <div class="outcome-label">Gain +4R</div>
+                            <div class="outcome-value">
+                                <span id="outcome4">0</span>
+                                <span class="outcome-expected">(attendu: 1/22 = 4.5%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item win">
+                            <div class="outcome-label">Gain +5R</div>
+                            <div class="outcome-value">
+                                <span id="outcome5">0</span>
+                                <span class="outcome-expected">(attendu: 1/22 = 4.5%)</span>
+                            </div>
+                        </div>
+                        <div class="outcome-item win jackpot">
+                            <div class="outcome-label">Gain +9R 🎰</div>
+                            <div class="outcome-value">
+                                <span id="outcome9">0</span>
+                                <span class="outcome-expected">(attendu: 1/22 = 4.5%)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="expectation-info warning" id="expectation-display">
+                        <strong>⚠️ Espérance mathématique :</strong> <span id="expectation-value">-0.182R par trade</span> <span id="expectation-icon">(NÉGATIVE ❌)</span><br>
+                        <small>Ce simulateur démontre l'importance du money management. Même avec une espérance négative, un bon money management peut prolonger votre capital.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'home/js/simulator.js' %}"></script>
+</body>
+</html>
