@@ -577,21 +577,27 @@ function updateStats(stats) {
     
     document.getElementById('numTrades').textContent = stats.total_trades;
     
-    // Stats détaillées
-    if (lastTradeData) {
-        document.getElementById('lastRisk').textContent = 
-            `${lastTradeData.risk_amount > 0 ? (lastTradeData.risk_amount / stats.current_capital * 100).toFixed(2) : 0}%`;
-        
-        document.getElementById('lastRiskAmount').textContent = 
-            `€${lastTradeData.risk_amount.toFixed(2)}`;
-        
-        const profitLossEl = document.getElementById('lastProfitLoss');
-        profitLossEl.textContent = `€${lastTradeData.profit_loss.toFixed(2)}`;
-        profitLossEl.className = `stat-value ${lastTradeData.is_win ? 'positive' : 'negative'}`;
-    }
+    // Stats détaillées - afficher les moyennes et maximums
+    // Risk (%) : moyenne
+    document.getElementById('lastRisk').textContent = 
+        `${stats.avg_risk_percent ? stats.avg_risk_percent.toFixed(2) : 0}%`;
     
-    document.getElementById('consecutiveWins').textContent = stats.consecutive_wins;
-    document.getElementById('consecutiveLosses').textContent = stats.consecutive_losses;
+    // Risk ($) : moyenne
+    document.getElementById('lastRiskAmount').textContent = 
+        `€${stats.avg_risk_amount ? stats.avg_risk_amount.toFixed(2) : 0}`;
+    
+    // Profit or Loss : moyenne
+    const profitLossEl = document.getElementById('lastProfitLoss');
+    profitLossEl.textContent = `€${stats.avg_profit_loss ? stats.avg_profit_loss.toFixed(2) : 0}`;
+    profitLossEl.className = `stat-value ${stats.avg_profit_loss > 0 ? 'positive' : stats.avg_profit_loss < 0 ? 'negative' : ''}`;
+    
+    // Consecutive Wins : maximum
+    document.getElementById('consecutiveWins').textContent = stats.max_consecutive_wins || 0;
+    
+    // Consecutive Losses : maximum
+    document.getElementById('consecutiveLosses').textContent = stats.max_consecutive_losses || 0;
+    
+    // Success Rate : ok (pourcentage global)
     document.getElementById('successRate').textContent = `${stats.success_rate.toFixed(2)}%`;
     
     document.getElementById('maxCapital').textContent = `€${stats.max_capital.toFixed(2)}`;

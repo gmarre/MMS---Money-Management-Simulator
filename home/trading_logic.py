@@ -146,11 +146,16 @@ class TradingSimulator:
         drawdown = ((session.current_capital - session.max_capital) / session.max_capital * 100) if session.max_capital > 0 else 0
         
         # Compter les occurrences de chaque issue
-        from django.db.models import Count
+        from django.db.models import Count, Avg
         outcome_counts = {}
         for trade in trades_queryset:
             multiplier = int(trade.outcome_multiplier)
             outcome_counts[multiplier] = outcome_counts.get(multiplier, 0) + 1
+        
+        # Calculer les moyennes
+        avg_risk_percent = trades_queryset.aggregate(Avg('risk_percent'))['risk_percent__avg'] or 0
+        avg_risk_amount = trades_queryset.aggregate(Avg('risk_amount'))['risk_amount__avg'] or 0
+        avg_profit_loss = trades_queryset.aggregate(Avg('profit_loss'))['profit_loss__avg'] or 0
         
         return {
             'total_trades': total_trades,
@@ -168,5 +173,8 @@ class TradingSimulator:
             'consecutive_losses': session.consecutive_losses,
             'max_consecutive_wins': session.max_consecutive_wins,
             'max_consecutive_losses': session.max_consecutive_losses,
+            'avg_risk_percent': round(float(avg_risk_percent), 2),
+            'avg_risk_amount': round(float(avg_risk_amount), 2),
+            'avg_profit_loss': round(float(avg_profit_loss), 2),
             'outcome_distribution': outcome_counts,
         }

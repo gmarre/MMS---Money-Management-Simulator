@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation des Stratégies Money Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .strategies-list {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .strategies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .strategy-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .strategy-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .strategy-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .visualization-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .visualization-area.active {
+            display: block;
+        }
+
+        .strategy-header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .strategy-title {
+            color: #1e3c72;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .strategy-description {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .controls-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        .controls-title {
+            font-size: 1.3em;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .control-value {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: none;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            height: 400px;
+        }
+
+        .insights-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .insight-box {
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid;
+        }
+
+        .insight-box.strengths {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .insight-box.weaknesses {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .insight-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insight-list {
+            list-style: none;
+        }
+
+        .insight-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .insight-list li:before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            font-size: 1.5em;
+            line-height: 0.9;
+        }
+
+        .strengths .insight-list li:before {
+            color: #28a745;
+        }
+
+        .weaknesses .insight-list li:before {
+            color: #dc3545;
+        }
+
+        .no-selection {
+            text-align: center;
+            padding: 100px 20px;
+            color: #999;
+        }
+
+        .no-selection-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Visualisation des Stratégies Money Management</h1>
+            <p class="subtitle">Explorez et comprenez le comportement de chaque stratégie de gestion de risque adaptatif</p>
+        </header>
+
+        <div class="strategies-list">
+            <div class="strategies-grid" id="strategiesGrid"></div>
+        </div>
+
+        <div class="visualization-area" id="visualizationArea">
+            <div class="no-selection">
+                <div class="no-selection-icon">🎯</div>
+                <h2>Sélectionnez une stratégie ci-dessus</h2>
+                <p>Cliquez sur une stratégie pour visualiser son comportement et comprendre ses paramètres</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données des stratégies avec leurs visualisations
+        const strategies = {{ strategies_json|safe }};
+        
+        let currentChart = null;
+        let currentStrategy = null;
+
+        // Initialiser les boutons de stratégies
+        function initializeStrategies() {
+            const grid = document.getElementById('strategiesGrid');
+            
+            strategies.forEach((strategy, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'strategy-btn';
+                btn.textContent = `S${index + 1}: ${strategy.name}`;
+                btn.onclick = () => selectStrategy(index);
+                grid.appendChild(btn);
+            });
+        }
+
+        // Sélectionner une stratégie
+        function selectStrategy(index) {
+            // Mise à jour des boutons actifs
+            document.querySelectorAll('.strategy-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+
+            currentStrategy = strategies[index];
+            displayStrategyVisualization(currentStrategy);
+        }
+
+        // Afficher la visualisation d'une stratégie
+        function displayStrategyVisualization(strategy) {
+            const area = document.getElementById('visualizationArea');
+            area.classList.add('active');
+
+            // Configuration spécifique selon le type de stratégie
+            const config = getStrategyConfig(strategy);
+
+            area.innerHTML = `
+                <div class="strategy-header">
+                    <h2 class="strategy-title">${strategy.name}</h2>
+                    <p class="strategy-description">${strategy.description}</p>
+                </div>
+
+                <div class="content-grid">
+                    <div class="controls-section">
+                        <h3 class="controls-title">⚙️ Paramètres de la stratégie</h3>
+                        ${generateControls(strategy, config)}
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="strategyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="insights-section">
+                    <div class="insight-box strengths">
+                        <div class="insight-title">✅ Points Forts</div>
+                        <ul class="insight-list">
+                            ${config.strengths.map(s => `<li>${s}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="insight-box weaknesses">
+                        <div class="insight-title">⚠️ Points Faibles</div>
+                        <ul class="insight-list">
+                            ${config.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            // Créer le graphique
+            createChart(strategy, config);
+        }
+
+        // Générer les contrôles (sliders) pour les paramètres
+        function generateControls(strategy, config) {
+            let html = '';
+            
+            for (const [param, value] of Object.entries(strategy.params)) {
+                const paramConfig = config.paramRanges[param];
+                if (!paramConfig) continue;
+
+                html += `
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>${paramConfig.label}</span>
+                            <span class="control-value" id="value_${param}">${value}${paramConfig.unit}</span>
+                        </div>
+                        <input type="range" 
+                               class="slider" 
+                               id="slider_${param}"
+                               min="${paramConfig.min}" 
+                               max="${paramConfig.max}" 
+                               step="${paramConfig.step}" 
+                               value="${value}"
+                               oninput="updateParameter('${param}', this.value, '${paramConfig.unit}')">
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        // Mettre à jour un paramètre et recharger le graphique
+        function updateParameter(param, value, unit) {
+            document.getElementById(`value_${param}`).textContent = value + unit;
+            currentStrategy.params[param] = parseFloat(value);
+            
+            // Recréer le graphique avec les nouvelles valeurs
+            const config = getStrategyConfig(currentStrategy);
+            createChart(currentStrategy, config);
+        }
+
+        // Créer le graphique selon le type de stratégie
+        function createChart(strategy, config) {
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            const ctx = document.getElementById('strategyChart').getContext('2d');
+            const data = config.generateData(strategy.params);
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: data.datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: data.datasets.length > 1,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: config.chartTitle,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: config.xAxisLabel
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Risque sur capital (%)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Configuration spécifique pour chaque type de stratégie
+        function getStrategyConfig(strategy) {
+            const key = strategy.key;
+
+            // ============ S1, S2, S3: Stratégies basées sur le Drawdown ============
+            if (key.includes('strategy_1') || key.includes('strategy_2') || key.includes('strategy_3')) {
+                return {
+                    chartTitle: 'Évolution du Risque en fonction du Drawdown',
+                    xAxisLabel: 'Drawdown (%)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'dd1': { label: 'Seuil DD1', min: 1, max: 30, step: 1, unit: '%' },
+                        'dd2': { label: 'Seuil DD2', min: 10, max: 50, step: 1, unit: '%' },
+                        'dd_step': { label: 'Palier DD', min: 1, max: 15, step: 1, unit: '%' },
+                        'decay': { label: 'Décroissance', min: 0.5, max: 0.95, step: 0.05, unit: '' },
+                        'dd_threshold': { label: 'Seuil DD', min: 5, max: 30, step: 1, unit: '%' },
+                        'safe_risk': { label: 'Risque sécurité', min: 0.1, max: 1, step: 0.05, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        
+                        // Générer des points de DD de 0% à -50%
+                        for (let dd = 0; dd >= -50; dd -= 1) {
+                            labels.push(dd.toFixed(0));
+                            
+                            // Calculer le risque selon la stratégie
+                            let risk;
+                            if (key.includes('strategy_1')) {
+                                // Drawdown Linéaire
+                                const base_risk = params.base_risk || 1;
+                                const dd1 = params.dd1 || 5;
+                                const dd2 = params.dd2 || 20;
+                                
+                                if (dd >= -dd1) {
+                                    risk = base_risk;
+                                } else if (dd <= -dd2) {
+                                    risk = base_risk * 0.3;
+                                } else {
+                                    const ratio = (Math.abs(dd) - dd1) / (dd2 - dd1);
+                                    risk = base_risk * (1 - 0.7 * ratio);
+                                }
+                            } else if (key.includes('strategy_2')) {
+                                // Drawdown Géométrique
+                                const base_risk = params.base_risk || 1;
+                                const dd_step = params.dd_step || 5;
+                                const decay = params.decay || 0.8;
+                                
+                                const steps = Math.max(0, Math.floor(Math.abs(dd) / dd_step));
+                                risk = base_risk * Math.pow(decay, steps);
+                            } else {
+                                // Mode Sécurité
+                                const base_risk = params.base_risk || 1;
+                                const dd_threshold = params.dd_threshold || 15;
+                                const safe_risk = params.safe_risk || 0.25;
+                                
+                                risk = dd < -dd_threshold ? safe_risk : base_risk;
+                            }
+                            
+                            risks.push(risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Protège efficacement le capital pendant les phases de pertes en réduisant progressivement l\'exposition',
+                        'Adaptation automatique et instantanée au contexte de marché sans intervention manuelle',
+                        'Réduit significativement le risque de ruine progressive lors de séquences défavorables',
+                        'Permet de conserver du capital pour profiter de la récupération future'
+                    ],
+                    weaknesses: [
+                        'Peut limiter les gains potentiels en période de récupération car le risque reste réduit',
+                        'Très sensible au paramétrage des seuils : des valeurs mal choisies peuvent être trop ou pas assez conservatrices',
+                        'Ne réagit pas aux séries de gains, manquant des opportunités de capitalisation',
+                        'Peut créer une sortie difficile du drawdown si les seuils sont trop stricts'
+                    ]
+                };
+            }
+
+            // ============ S4: DD Max Historique ============
+            if (key.includes('strategy_4')) {
+                return {
+                    chartTitle: 'Risque en fonction du Ratio DD Actuel / DD Max',
+                    xAxisLabel: 'Ratio DD / DD Max',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'ratio_threshold': { label: 'Seuil de ratio', min: 0.5, max: 1.0, step: 0.05, unit: '' },
+                        'low_risk': { label: 'Risque réduit', min: 0.1, max: 2, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const ratio_threshold = params.ratio_threshold || 0.7;
+                        const low_risk = params.low_risk || 0.5;
+                        
+                        for (let ratio = 0; ratio <= 1; ratio += 0.05) {
+                            labels.push(ratio.toFixed(2));
+                            risks.push(ratio > ratio_threshold ? low_risk : base_risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Apprend de l\'historique : utilise le pire drawdown vécu comme référence pour contextualiser la situation actuelle',
+                        'Évite les sur-réactions en comparant le DD actuel à l\'expérience passée plutôt qu\'à des seuils arbitraires',
+                        'Efficace pour gérer des conditions de marché similaires à celles déjà rencontrées',
+                        'Réduit le risque uniquement quand on approche vraiment d\'une zone dangereuse connue'
+                    ],
+                    weaknesses: [
+                        'Nécessite un historique suffisant : inefficace en début de trading (manque de référence)',
+                        'Peut être trop permissif si le DD max historique était exceptionnel (ex: flash crash)',
+                        'Ne protège pas contre un nouveau type de drawdown jamais rencontré auparavant',
+                        'La stratégie évolue dans le temps : difficile à backtester de manière cohérente'
+                    ]
+                };
+            }
+
+            // ============ S5, S6: Scaling sur Capital ============
+            if (key.includes('strategy_5') || key.includes('strategy_6')) {
+                return {
+                    chartTitle: 'Risque en fonction de la Performance (%)',
+                    xAxisLabel: 'Performance par rapport au capital initial (%)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'gain_step': { label: 'Palier de gain', min: 5, max: 30, step: 5, unit: '%' },
+                        'increment': { label: 'Incrément risque', min: 0.05, max: 0.5, step: 0.05, unit: '%' },
+                        'growth_rate': { label: 'Taux croissance', min: 1.05, max: 1.3, step: 0.05, unit: '' },
+                        'step': { label: 'Palier', min: 5, max: 20, step: 5, unit: '%' },
+                        'max_risk': { label: 'Risque maximum', min: 1, max: 10, step: 0.5, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const max_risk = params.max_risk || 5.0;
+                        
+                        for (let perf = 0; perf <= 100; perf += 5) {
+                            labels.push(perf.toFixed(0));
+                            
+                            let risk;
+                            if (key.includes('strategy_5')) {
+                                const gain_step = params.gain_step || 10;
+                                const increment = params.increment || 0.1;
+                                const steps = Math.floor(perf / gain_step);
+                                risk = base_risk + (steps * increment);
+                            } else {
+                                const growth_rate = params.growth_rate || 1.1;
+                                const step = params.step || 10;
+                                const steps = Math.floor(perf / step);
+                                risk = base_risk * Math.pow(growth_rate, steps);
+                            }
+                            
+                            risks.push(Math.min(risk, max_risk)); // Cap au max_risk paramétrable
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Capitalise sur les périodes de gains en augmentant progressivement l\'exposition au marché',
+                        'Profite de l\'effet de levier du capital cumulé pour accélérer la croissance du compte',
+                        'Psychologiquement gratifiant : vous prenez plus de risque quand vous gagnez',
+                        'Permet d\'atteindre des objectifs ambitieux plus rapidement en période favorable'
+                    ],
+                    weaknesses: [
+                        'Très risqué en période de retournement : un gros risque juste avant un krach peut tout anéantir',
+                        'Amplifie les pertes après une période de gains si le marché se retourne',
+                        'Peut créer une surconfiance dangereuse et pousser à prendre trop de risques',
+                        'Nécessite une discipline stricte pour revenir au risque de base après un drawdown'
+                    ]
+                };
+            }
+
+            // ============ S7: Risk Reset ============
+            if (key.includes('strategy_7')) {
+                return {
+                    chartTitle: 'Risque en fonction du Nombre de Trades sans ATH',
+                    xAxisLabel: 'Trades sans nouveau plus-haut',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'plateau_step': { label: 'Palier de plateau', min: 3, max: 20, step: 1, unit: ' trades' },
+                        'reset_risk': { label: 'Risque reset', min: 0.5, max: 3, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const plateau_step = params.plateau_step || 5;
+                        const reset_risk = params.reset_risk || 1.5;
+                        
+                        for (let trades = 0; trades <= 30; trades++) {
+                            labels.push(trades.toString());
+                            risks.push(trades >= plateau_step ? reset_risk : base_risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#ffc107',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Combat la stagnation : force une tentative de sortie de plateau en augmentant l\'exposition',
+                        'Utile pour les marchés en range où il faut prendre plus de risque pour sortir de la zone',
+                        'Évite la paralysie décisionnelle en imposant une règle mécanique d\'action',
+                        'Peut accélérer la sortie d\'une période de stagnation prolongée'
+                    ],
+                    weaknesses: [
+                        'Dangereux en drawdown prolongé : augmente le risque au pire moment possible',
+                        'Peut accélérer la ruine si le plateau est dû à une mauvaise configuration de marché',
+                        'Ne distingue pas entre stagnation saine et drawdown déguisé',
+                        'Psychologiquement difficile : augmenter le risque après une série sans gains va contre l\'instinct'
+                    ]
+                };
+            }
+
+            // ============ S8: ATH Distance ============
+            if (key.includes('strategy_8')) {
+                return {
+                    chartTitle: 'Risque en fonction de la Distance à l\'ATH',
+                    xAxisLabel: 'Distance à l\'ATH (%)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'ath_distance': { label: 'Distance boost', min: 2, max: 20, step: 1, unit: '%' },
+                        'boost_risk': { label: 'Risque boosté', min: 1, max: 3, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const ath_distance = params.ath_distance || 10;
+                        const boost_risk = params.boost_risk || 1.2;
+                        
+                        for (let dist = 0; dist <= 30; dist++) {
+                            labels.push(dist.toFixed(0));
+                            risks.push(dist <= ath_distance ? boost_risk : base_risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#17a2b8',
+                                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Capitalise sur la momentum : prend plus de risque quand on est proche du sommet (tendance haussière)',
+                        'Profite des périodes de forte performance pour maximiser les gains',
+                        'Réduit automatiquement le risque en s\'éloignant du pic (protection contre les retournements)',
+                        'Aligné avec la psychologie gagnante : plus agressif en position de force'
+                    ],
+                    weaknesses: [
+                        'Peut manquer des opportunités de récupération en réduisant le risque après un DD',
+                        'Vulnérable aux pics suivis de corrections brutales (bull trap)',
+                        'Favorise le trading en tendance mais pénalise les marchés en range',
+                        'Peut créer une fausse sécurité : être proche de l\'ATH ne garantit pas la continuation'
+                    ]
+                };
+            }
+
+            // ============ S9, S10, S11: Martingale et variantes ============
+            if (key.includes('strategy_9') || key.includes('strategy_10') || key.includes('strategy_11')) {
+                return {
+                    chartTitle: 'Risque en fonction des Trades Consécutifs',
+                    xAxisLabel: 'Nombre de trades (gains ou pertes selon la stratégie)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'up_factor': { label: 'Facteur hausse', min: 1.1, max: 2, step: 0.1, unit: 'x' },
+                        'down_factor': { label: 'Facteur baisse', min: 0.5, max: 0.9, step: 0.1, unit: 'x' },
+                        'multiplier': { label: 'Multiplicateur', min: 1.2, max: 3, step: 0.1, unit: 'x' },
+                        'max_risk': { label: 'Risque max', min: 2, max: 10, step: 0.5, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const winsData = [];
+                        const lossesData = [];
+                        const base_risk = params.base_risk || 1.0;
+                        
+                        for (let n = 0; n <= 10; n++) {
+                            labels.push(n.toString());
+                            
+                            let riskWin, riskLoss;
+                            
+                            if (key.includes('strategy_9')) {
+                                const up_factor = params.up_factor || 1.2;
+                                const down_factor = params.down_factor || 0.8;
+                                riskWin = base_risk * Math.pow(up_factor, n);
+                                riskLoss = base_risk * Math.pow(down_factor, n);
+                            } else if (key.includes('strategy_10')) {
+                                const multiplier = params.multiplier || 2;
+                                const max_risk = params.max_risk || 5;
+                                riskWin = base_risk;
+                                riskLoss = Math.min(base_risk * Math.pow(multiplier, n), max_risk);
+                            } else {
+                                const multiplier = params.multiplier || 1.5;
+                                const max_risk = params.max_risk || 5;
+                                riskWin = Math.min(base_risk * Math.pow(multiplier, n), max_risk);
+                                riskLoss = base_risk;
+                            }
+                            
+                            winsData.push(Math.min(riskWin, 10));
+                            lossesData.push(Math.min(riskLoss, 10));
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Après gains consécutifs',
+                                    data: winsData,
+                                    borderColor: '#28a745',
+                                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                },
+                                {
+                                    label: 'Après pertes consécutives',
+                                    data: lossesData,
+                                    borderColor: '#dc3545',
+                                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }
+                            ]
+                        };
+                    },
+                    strengths: [
+                        'S9 (Anti-Martingale): Profite des streaks gagnantes en augmentant l\'exposition, réduit les pertes après défaites',
+                        'S10 (Martingale classique): Peut récupérer rapidement après pertes si retournement favorable',
+                        'S11 (Martingale inversée): Capitalise agressivement sur les séries gagnantes',
+                        'Stratégies mécaniques simples à implémenter et à comprendre'
+                    ],
+                    weaknesses: [
+                        'S9: Réduit le risque après pertes, ce qui peut empêcher une récupération rapide',
+                        'S10 (TRÈS DANGEREUX): Augmente le risque après pertes - chemin rapide vers la ruine en série noire',
+                        'S11: Augmente drastiquement le risque après gains - une correction brutale peut tout effacer',
+                        'Toutes sont vulnérables aux séquences longues : le risque explose rapidement'
+                    ]
+                };
+            }
+
+            // ============ S12: Moyenne Mobile des Gains/Pertes ============
+            if (key.includes('strategy_12')) {
+                return {
+                    chartTitle: 'Risque en fonction de la Moyenne Mobile des Résultats',
+                    xAxisLabel: 'Moyenne des 10 derniers trades (R)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'window': { label: 'Fenêtre', min: 5, max: 30, step: 5, unit: ' trades' },
+                        'scale': { label: 'Échelle', min: 0.5, max: 2, step: 0.1, unit: '' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const scale = params.scale || 1;
+                        
+                        for (let avg = -2; avg <= 2; avg += 0.2) {
+                            labels.push(avg.toFixed(1));
+                            const risk = Math.max(0.25 * base_risk, base_risk * (1 + avg * scale));
+                            risks.push(Math.min(risk, 3 * base_risk));
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#9c27b0',
+                                backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Lisse les variations : moins réactif aux trades individuels, regarde la tendance globale',
+                        'Adapté aux stratégies avec espérance positive mais forte variance',
+                        'Réduit les sur-réactions émotionnelles en se basant sur une fenêtre statistique',
+                        'Peut identifier les changements de régime de marché à travers la performance moyenne'
+                    ],
+                    weaknesses: [
+                        'Réaction retardée : met du temps à détecter un changement de contexte',
+                        'Peut maintenir un risque élevé trop longtemps après un retournement',
+                        'Nécessite un paramétrage délicat de la fenêtre (trop court = bruit, trop long = lag)',
+                        'Moins efficace en début de trading (fenêtre incomplète)'
+                    ]
+                };
+            }
+
+            // ============ S13: Volatilité des Résultats ============
+            if (key.includes('strategy_13')) {
+                return {
+                    chartTitle: 'Risque en fonction de la Volatilité des Trades',
+                    xAxisLabel: 'Écart-type des résultats (R)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'low_vol': { label: 'Vol faible', min: 0.5, max: 2, step: 0.1, unit: 'R' },
+                        'high_vol': { label: 'Vol élevée', min: 2, max: 5, step: 0.5, unit: 'R' },
+                        'low_risk': { label: 'Risque vol faible', min: 1, max: 3, step: 0.1, unit: '%' },
+                        'high_risk': { label: 'Risque vol haute', min: 0.1, max: 1, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const low_vol = params.low_vol || 1;
+                        const high_vol = params.high_vol || 3;
+                        const low_risk = params.low_risk || 1.5;
+                        const high_risk = params.high_risk || 0.5;
+                        
+                        for (let vol = 0; vol <= 5; vol += 0.2) {
+                            labels.push(vol.toFixed(1));
+                            
+                            let risk;
+                            if (vol <= low_vol) {
+                                risk = low_risk;
+                            } else if (vol >= high_vol) {
+                                risk = high_risk;
+                            } else {
+                                const ratio = (vol - low_vol) / (high_vol - low_vol);
+                                risk = low_risk - (ratio * (low_risk - high_risk));
+                            }
+                            
+                            risks.push(risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#e91e63',
+                                backgroundColor: 'rgba(233, 30, 99, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Très intelligent : adapte le risque à la prévisibilité du marché, pas juste aux résultats',
+                        'Augmente le risque en période de faible volatilité (résultats stables et prévisibles)',
+                        'Réduit le risque en période chaotique même si la performance moyenne est bonne',
+                        'Excellent pour détecter les changements de régime de marché (calme → volatil)'
+                    ],
+                    weaknesses: [
+                        'Nécessite un historique suffisant pour calculer une volatilité significative',
+                        'Peut réduire le risque pendant des périodes volatiles mais très profitables',
+                        'Complexe à paramétrer : les seuils de volatilité dépendent de la stratégie de trading',
+                        'Sensible aux outliers : un seul trade exceptionnel peut fausser la volatilité'
+                    ]
+                };
+            }
+
+            // ============ S14: Kelly Criterion Simplifié ============
+            if (key.includes('strategy_14')) {
+                return {
+                    chartTitle: 'Risque selon Kelly en fonction du Win Rate',
+                    xAxisLabel: 'Win Rate (%)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'avg_win': { label: 'Gain moyen', min: 1, max: 5, step: 0.5, unit: 'R' },
+                        'avg_loss': { label: 'Perte moyenne', min: 0.5, max: 2, step: 0.1, unit: 'R' },
+                        'kelly_fraction': { label: 'Fraction Kelly', min: 0.1, max: 1, step: 0.1, unit: '' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const avg_win = params.avg_win || 2;
+                        const avg_loss = params.avg_loss || 1;
+                        const kelly_fraction = params.kelly_fraction || 0.5;
+                        
+                        for (let wr = 0; wr <= 100; wr += 5) {
+                            labels.push(wr.toFixed(0));
+                            
+                            const p = wr / 100;
+                            const q = 1 - p;
+                            const b = avg_win / avg_loss;
+                            
+                            const kelly = (p * b - q) / b;
+                            const risk = Math.max(0, kelly * kelly_fraction * 100);
+                            
+                            risks.push(Math.min(risk, 5));
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque Kelly (%)',
+                                data: risks,
+                                borderColor: '#00bcd4',
+                                backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Approche mathématiquement optimale : maximise la croissance logarithmique du capital',
+                        'S\'adapte automatiquement à l\'edge de la stratégie (win rate + risk/reward)',
+                        'Empêche le sur-trading : risque nul ou très faible si edge insuffisant',
+                        'Utilisé par de nombreux traders professionnels et gestionnaires de fonds'
+                    ],
+                    weaknesses: [
+                        'Full Kelly est trop agressif : nécessite une fraction (0.25-0.5) pour être praticable',
+                        'Extrêmement sensible aux estimations : une erreur sur le win rate fausse tout',
+                        'Suppose des paramètres stables dans le temps (souvent faux en trading)',
+                        'Peut recommander des risques élevés si l\'historique récent est exceptionnellement bon'
+                    ]
+                };
+            }
+
+            // ============ S15: Ratio de Sharpe Adaptatif ============
+            if (key.includes('strategy_15')) {
+                return {
+                    chartTitle: 'Risque en fonction du Ratio de Sharpe',
+                    xAxisLabel: 'Sharpe Ratio',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'sharpe_low': { label: 'Sharpe faible', min: 0, max: 1, step: 0.1, unit: '' },
+                        'sharpe_high': { label: 'Sharpe élevé', min: 1.5, max: 3, step: 0.1, unit: '' },
+                        'low_risk': { label: 'Risque Sharpe faible', min: 0.1, max: 1, step: 0.1, unit: '%' },
+                        'high_risk': { label: 'Risque Sharpe élevé', min: 1, max: 3, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const sharpe_low = params.sharpe_low || 0.5;
+                        const sharpe_high = params.sharpe_high || 2;
+                        const low_risk = params.low_risk || 0.5;
+                        const high_risk = params.high_risk || 2;
+                        
+                        for (let sharpe = 0; sharpe <= 3; sharpe += 0.1) {
+                            labels.push(sharpe.toFixed(1));
+                            
+                            let risk;
+                            if (sharpe <= sharpe_low) {
+                                risk = low_risk;
+                            } else if (sharpe >= sharpe_high) {
+                                risk = high_risk;
+                            } else {
+                                const ratio = (sharpe - sharpe_low) / (sharpe_high - sharpe_low);
+                                risk = low_risk + (ratio * (high_risk - low_risk));
+                            }
+                            
+                            risks.push(risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#3f51b5',
+                                backgroundColor: 'rgba(63, 81, 181, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Métrique sophistiquée : combine rendement ET volatilité pour évaluer la qualité de la performance',
+                        'Récompense la régularité : favorise les stratégies avec gains constants plutôt que erratiques',
+                        'Standard de l\'industrie financière : métrique reconnue et validée',
+                        'Détecte automatiquement les périodes de haute qualité de trading vs. périodes médiocres'
+                    ],
+                    weaknesses: [
+                        'Calcul complexe nécessitant un historique conséquent pour être fiable',
+                        'Peut mal réagir aux changements brusques : Sharpe élevé avant un krach',
+                        'Dépend fortement de la fenêtre de calcul choisie (court terme vs. long terme)',
+                        'Ne distingue pas volatilité positive (gros gains) de négative (grosses pertes)'
+                    ]
+                };
+            }
+
+            // ============ S16, S17, S18: Combinaisons Multi-Signaux ============
+            if (key.includes('strategy_16') || key.includes('strategy_17') || key.includes('strategy_18')) {
+                return {
+                    chartTitle: 'Risque selon Combinaison de Signaux',
+                    xAxisLabel: 'Score de condition de marché (-3 à +3)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'threshold_low': { label: 'Seuil bas', min: -3, max: 0, step: 0.5, unit: '' },
+                        'threshold_high': { label: 'Seuil haut', min: 0, max: 3, step: 0.5, unit: '' },
+                        'risk_reduction': { label: 'Réduction risque', min: 0.3, max: 0.8, step: 0.1, unit: '' },
+                        'risk_increase': { label: 'Augmentation risque', min: 1.2, max: 2, step: 0.1, unit: '' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const threshold_low = params.threshold_low || -1;
+                        const threshold_high = params.threshold_high || 1;
+                        const risk_reduction = params.risk_reduction || 0.5;
+                        const risk_increase = params.risk_increase || 1.5;
+                        
+                        for (let score = -3; score <= 3; score += 0.2) {
+                            labels.push(score.toFixed(1));
+                            
+                            let risk;
+                            if (score <= threshold_low) {
+                                risk = base_risk * risk_reduction;
+                            } else if (score >= threshold_high) {
+                                risk = base_risk * risk_increase;
+                            } else {
+                                risk = base_risk;
+                            }
+                            
+                            risks.push(risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#ff5722',
+                                backgroundColor: 'rgba(255, 87, 34, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Approche holistique : combine plusieurs métriques pour une vision complète du contexte',
+                        'Plus robuste que les stratégies mono-critère : moins de faux signaux',
+                        'Permet de capturer des situations complexes (ex: DD modéré + volatilité élevée + série de pertes)',
+                        'Très personnalisable : pondération des facteurs selon les préférences du trader'
+                    ],
+                    weaknesses: [
+                        'Complexité : difficile de comprendre pourquoi le risque change à un moment donné',
+                        'Sur-optimisation : risque de fit parfait sur données passées mais inefficace en live',
+                        'Nécessite beaucoup de données pour valider la combinaison de paramètres',
+                        'Maintenance difficile : doit réévaluer les pondérations régulièrement'
+                    ]
+                };
+            }
+
+            // ============ S19: Time-Based Risk (Heure de la journée) ============
+            if (key.includes('strategy_19')) {
+                return {
+                    chartTitle: 'Risque en fonction de l\'Heure de Trading',
+                    xAxisLabel: 'Heure de la journée',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'peak_start': { label: 'Début pic', min: 8, max: 14, step: 1, unit: 'h' },
+                        'peak_end': { label: 'Fin pic', min: 14, max: 20, step: 1, unit: 'h' },
+                        'peak_risk': { label: 'Risque pic', min: 1, max: 3, step: 0.1, unit: '%' },
+                        'off_risk': { label: 'Risque off-peak', min: 0.1, max: 1, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const peak_start = params.peak_start || 9;
+                        const peak_end = params.peak_end || 16;
+                        const peak_risk = params.peak_risk || 1.5;
+                        const off_risk = params.off_risk || 0.5;
+                        
+                        for (let hour = 0; hour < 24; hour++) {
+                            labels.push(hour + 'h');
+                            risks.push((hour >= peak_start && hour <= peak_end) ? peak_risk : off_risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#ff9800',
+                                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Exploite les patterns de liquidité : plus de risque pendant les heures de forte activité',
+                        'Réduit le risque pendant les périodes creuses (spreads larges, slippage élevé)',
+                        'Adapté aux marchés avec horaires spécifiques (ouvertures de bourses, news économiques)',
+                        'Peut éviter les gap overnight en réduisant le risque en fin de journée'
+                    ],
+                    weaknesses: [
+                        'Simpliste : ignore les conditions de marché réelles (un crash à 10h reste dangereux)',
+                        'Pas adapté au trading 24/7 (crypto) où la notion d\'horaire est moins pertinente',
+                        'Peut manquer des opportunités hors heures de pic',
+                        'Les horaires optimaux changent selon les actifs et évoluent dans le temps'
+                    ]
+                };
+            }
+
+            // ============ S20: Modèle Linéaire 3 Signaux ============
+            if (key.includes('strategy_20')) {
+                return {
+                    chartTitle: 'Contribution des 3 Facteurs au Risque Final',
+                    xAxisLabel: 'Valeur normalisée du facteur',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'a': { label: 'Poids DD', min: 0, max: 1, step: 0.1, unit: '' },
+                        'b': { label: 'Poids Wins', min: 0, max: 1, step: 0.1, unit: '' },
+                        'c': { label: 'Poids Volatilité', min: 0, max: 1, step: 0.1, unit: '' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const dd_contrib = [];
+                        const wins_contrib = [];
+                        const vol_contrib = [];
+                        
+                        const a = params.a || 0.3;
+                        const b = params.b || 0.4;
+                        const c = params.c || 0.3;
+                        const total = a + b + c;
+                        
+                        for (let val = -1; val <= 1; val += 0.1) {
+                            labels.push(val.toFixed(1));
+                            dd_contrib.push((a / total) * (1 + val));
+                            wins_contrib.push((b / total) * (1 + val));
+                            vol_contrib.push((c / total) * (1 + val));
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Contribution DD',
+                                    data: dd_contrib,
+                                    borderColor: '#e74c3c',
+                                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                },
+                                {
+                                    label: 'Contribution Wins',
+                                    data: wins_contrib,
+                                    borderColor: '#28a745',
+                                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                },
+                                {
+                                    label: 'Contribution Volatilité',
+                                    data: vol_contrib,
+                                    borderColor: '#9c27b0',
+                                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }
+                            ]
+                        };
+                    },
+                    strengths: [
+                        'Modèle quantitatif transparent : chaque facteur a un poids explicite et ajustable',
+                        'Équilibre personnalisable : vous décidez ce qui compte le plus (DD, performance, volatilité)',
+                        'Facilement testable et optimisable avec des données historiques',
+                        'Approche scientifique : s\'inspire de la régression linéaire utilisée en finance quantitative'
+                    ],
+                    weaknesses: [
+                        'Suppose une relation linéaire entre facteurs et risque optimal (rarement vrai)',
+                        'Les poids doivent être recalibrés régulièrement selon les conditions de marché',
+                        'Risque de sur-optimisation : parfait sur le passé, inefficace en forward testing',
+                        'Ne capture pas les interactions non-linéaires entre facteurs (ex: DD élevé + volatilité forte)'
+                    ]
+                };
+            }
+
+            // Configuration par défaut (ne devrait jamais être utilisé)
+            return {
+                chartTitle: 'Comportement de la stratégie',
+                xAxisLabel: 'Paramètre X',
+                paramRanges: {},
+                generateData: () => ({ labels: [], datasets: [] }),
+                strengths: ['À définir'],
+                weaknesses: ['À définir']
+            };
+        }
+
+        // Initialiser au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeStrategies();
+        });
+    </script>
+</body>
+</html>

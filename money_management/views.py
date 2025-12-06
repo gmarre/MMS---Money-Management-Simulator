@@ -13,9 +13,28 @@ from .simulator import run_simulation
 
 def strategies_view(request):
     """
-    Vue pour afficher la page HTML des stratégies
+    Vue pour afficher la page HTML des stratégies (ancienne version)
     """
     return render(request, 'money_management/strategies.html')
+
+
+def visualizer_view(request):
+    """
+    Vue pour afficher le visualiseur interactif des stratégies
+    """
+    # Préparer les données des stratégies pour le JSON
+    strategies_data = []
+    for key, info in STRATEGIES.items():
+        strategies_data.append({
+            'key': key,
+            'name': info['name'],
+            'description': info['description'],
+            'params': info['params']
+        })
+    
+    return render(request, 'money_management/visualizer.html', {
+        'strategies_json': json.dumps(strategies_data)
+    })
 
 
 @csrf_exempt
