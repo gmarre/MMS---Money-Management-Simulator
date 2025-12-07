@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats Batch - Money Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .batch-selector {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .batch-selector label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .batch-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .stats-container {
+            display: none;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .summary-card .value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .results-table {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr {
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background: #e3f2fd;
+        }
+
+        .perf-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .perf-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .dd-good {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .dd-warning {
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .dd-danger {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .strategy-name {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+            font-size: 18px;
+        }
+
+        .sort-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .sort-controls label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .sort-controls select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .delete-batch-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-batch-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .batch-controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .batch-select-wrapper {
+            flex: 1;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 0;
+            width: 95%;
+            max-width: 1600px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 40px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .close-modal {
+            color: white;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-modal:hover {
+            opacity: 0.8;
+        }
+
+        .modal-body {
+            padding: 30px 40px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .params-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .detail-table th {
+            background: #f8f9fa;
+            color: #333;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .detail-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .sim-rank {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .rank-1 { color: #FFD700; }
+        .rank-2 { color: #C0C0C0; }
+        .rank-3 { color: #CD7F32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Résultats des Simulations Batch</h1>
+        <p class="subtitle">Analysez et comparez les performances de vos stratégies</p>
+
+        <div class="nav-buttons">
+            <a href="{% url 'money_management:batch_runner' %}" class="btn btn-primary">← Nouveau Batch</a>
+            <a href="{% url 'money_management:visualizer_view' %}" class="btn btn-secondary">Visualiseur</a>
+        </div>
+
+        <div class="batch-controls">
+            <div class="batch-select-wrapper batch-selector">
+                <label for="batchSelect">Sélectionner un Batch</label>
+                <select id="batchSelect" onchange="loadBatchResults()">
+                    <option value="">-- Choisir un batch --</option>
+                    {% for batch in batches %}
+                    <option value="{{ batch.batch_id }}" data-name="{{ batch.name }}" data-equity="{{ batch.has_equity_curves }}">
+                        {{ batch.name }} - {{ batch.completed_simulations }}/{{ batch.total_simulations }} simulations
+                        ({{ batch.created_at|date:"d/m/Y H:i" }})
+                        {% if batch.has_equity_curves %}📈{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div id="equityCurveBadge" style="display: none; margin-top: 10px; padding: 8px 15px; background: #d4edda; color: #155724; border-radius: 8px; font-size: 14px;">
+                    📈 Ce batch contient les equity curves détaillées
+                </div>
+            </div>
+            <button class="delete-batch-btn" id="deleteBatchBtn" onclick="confirmDeleteBatch()" style="display: none;">
+                🗑️ Supprimer ce Batch
+            </button>
+        </div>
+
+        <div id="statsContainer" class="stats-container">
+            <div class="summary-cards" id="summaryCards">
+                <!-- Les cartes de résumé seront ajoutées ici -->
+            </div>
+
+            <div class="sort-controls">
+                <label>Trier par:</label>
+                <select id="sortBy" onchange="sortTable()">
+                    <option value="perf_desc">Performance (Médiane) ↓</option>
+                    <option value="perf_asc">Performance (Médiane) ↑</option>
+                    <option value="dd_asc">Drawdown (Moyen) ↑</option>
+                    <option value="dd_desc">Drawdown (Moyen) ↓</option>
+                    <option value="success_desc">Taux de Réussite ↓</option>
+                </select>
+            </div>
+
+            <div class="results-table">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Stratégie</th>
+                            <th>Nb Sims</th>
+                            <th>Perf Médiane</th>
+                            <th>Perf Moy</th>
+                            <th>Perf Max</th>
+                            <th>DD Moyen</th>
+                            <th>DD Médian</th>
+                            <th>DD Max</th>
+                            <th>Taux Succès</th>
+                            <th>Wins Consec.</th>
+                            <th>Losses Consec.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr>
+                            <td colspan="11" class="loading">Chargement...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour les détails d'une stratégie -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Détails des Simulations</h2>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="params-display" id="modalParams"></div>
+                
+                <!-- Canvas pour l'equity curve -->
+                <div id="equityCurveContainer" style="display: none; margin: 20px 0;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">📈 Equity Curve</h3>
+                    <canvas id="equityCurveChart" style="max-height: 400px;"></canvas>
+                </div>
+                
+                <div id="modalLoading" class="loading">Chargement des détails...</div>
+                <table class="detail-table" id="detailTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Capital Final (€)</th>
+                            <th>Performance (%)</th>
+                            <th>Max DD (%)</th>
+                            <th>Max Perf (%)</th>
+                            <th>Risque Moy (%)</th>
+                            <th>P/L Moyen (€)</th>
+                            <th>Taux Succès</th>
+                            <th>Wins Consec.</th>
+                            <th>Losses Consec.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let currentBatchId = null;
+
+        function closeModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        async function confirmDeleteBatch() {
+            if (!currentBatchId) {
+                alert('Aucun batch sélectionné');
+                return;
+            }
+
+            const batchSelect = document.getElementById('batchSelect');
+            const selectedOption = batchSelect.options[batchSelect.selectedIndex];
+            const batchName = selectedOption.getAttribute('data-name');
+
+            const confirmed = confirm(
+                `⚠️ ATTENTION ⚠️\n\n` +
+                `Êtes-vous sûr de vouloir supprimer le batch "${batchName}" ?\n\n` +
+                `Cette action est IRRÉVERSIBLE et supprimera :\n` +
+                `- Le batch lui-même\n` +
+                `- Toutes les simulations associées\n` +
+                `- Toutes les statistiques\n\n` +
+                `Confirmez-vous la suppression ?`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/money-management/batch/${currentBatchId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ ${result.message}\n\n${result.deleted_simulations} simulations supprimées.`);
+                    
+                    // Recharger la page pour mettre à jour la liste des batches
+                    window.location.reload();
+                } else {
+                    throw new Error(result.error || 'Erreur lors de la suppression');
+                }
+
+            } catch (error) {
+                alert(`❌ Erreur lors de la suppression: ${error.message}`);
+            }
+        }
+
+        let equityChart = null; // Variable globale pour stocker l'instance du chart
+
+        async function showStrategyDetails(strategyKey, strategyName) {
+            const modal = document.getElementById('detailsModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalLoading = document.getElementById('modalLoading');
+            const detailTable = document.getElementById('detailTable');
+            const detailTableBody = document.getElementById('detailTableBody');
+            const modalParams = document.getElementById('modalParams');
+            const equityCurveContainer = document.getElementById('equityCurveContainer');
+
+            // Afficher le modal
+            modal.style.display = 'block';
+            modalTitle.textContent = `${strategyName} - Détails des Simulations`;
+            modalLoading.style.display = 'block';
+            detailTable.style.display = 'none';
+            equityCurveContainer.style.display = 'none';
+            
+            // Détruire l'ancien chart s'il existe
+            if (equityChart) {
+                equityChart.destroy();
+                equityChart = null;
+            }
+
+            try {
+                const response = await fetch(`/money-management/batch/${currentBatchId}/strategy/${strategyKey}/`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur lors du chargement');
+                }
+
+                // Afficher les paramètres
+                const params = data.simulations[0].parameters;
+                modalParams.innerHTML = `<strong>Paramètres:</strong> ${JSON.stringify(params, null, 2)}`;
+
+                // Remplir le tableau avec bouton pour voir l'equity curve
+                detailTableBody.innerHTML = data.simulations.map((sim, index) => {
+                    const perfClass = sim.final_performance_pct > 0 ? 'perf-positive' : 'perf-negative';
+                    const ddClass = sim.max_drawdown_pct > -20 ? 'dd-good' : (sim.max_drawdown_pct > -35 ? 'dd-warning' : 'dd-danger');
+                    const rankClass = index < 3 ? `sim-rank rank-${index + 1}` : 'sim-rank';
+                    const hasEquityCurve = sim.equity_curve && sim.equity_curve.length > 0;
+
+                    return `
+                        <tr onclick="${hasEquityCurve ? `showEquityCurve(${index}, '${strategyName}')` : ''}" style="${hasEquityCurve ? 'cursor: pointer;' : ''}">
+                            <td class="${rankClass}">#${index + 1} ${hasEquityCurve ? '📈' : ''}</td>
+                            <td>${sim.final_capital.toFixed(2)} €</td>
+                            <td class="${perfClass}">${sim.final_performance_pct.toFixed(2)}%</td>
+                            <td class="${ddClass}">${sim.max_drawdown_pct.toFixed(2)}%</td>
+                            <td class="${perfClass}">${sim.max_performance_pct.toFixed(2)}%</td>
+                            <td>${sim.avg_risk_pct.toFixed(4)}%</td>
+                            <td>${sim.avg_profit_loss.toFixed(2)} €</td>
+                            <td>${sim.success_rate.toFixed(2)}%</td>
+                            <td>${sim.max_consecutive_wins}</td>
+                            <td>${sim.max_consecutive_losses}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Stocker les données pour pouvoir afficher l'equity curve
+                window.currentSimulations = data.simulations;
+
+                modalLoading.style.display = 'none';
+                detailTable.style.display = 'table';
+
+            } catch (error) {
+                modalLoading.innerHTML = `<div class="no-data">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        function showEquityCurve(simIndex, strategyName) {
+            const sim = window.currentSimulations[simIndex];
+            if (!sim.equity_curve || sim.equity_curve.length === 0) {
+                alert('Aucune equity curve disponible pour cette simulation');
+                return;
+            }
+
+            const container = document.getElementById('equityCurveContainer');
+            container.style.display = 'block';
+
+            // Détruire l'ancien chart s'il existe
+            if (equityChart) {
+                equityChart.destroy();
+            }
+
+            // Créer les labels (numéros de trades)
+            const labels = sim.equity_curve.map((_, index) => index);
+
+            // Créer le chart
+            const ctx = document.getElementById('equityCurveChart').getContext('2d');
+            equityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `Capital (€) - Simulation #${simIndex + 1}`,
+                        data: sim.equity_curve,
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${strategyName} - Simulation #${simIndex + 1}`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Capital: ${context.parsed.y.toFixed(2)} €`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Trade #'
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Capital (€)'
+                            },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // Scroll vers le graphique
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Fermer le modal en cliquant à l'extérieur
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailsModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        async function loadBatchResults() {
+            const batchId = document.getElementById('batchSelect').value;
+            const selectElement = document.getElementById('batchSelect');
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const hasEquityCurves = selectedOption.getAttribute('data-equity') === 'True';
+            
+            currentBatchId = batchId;
+            const deleteBatchBtn = document.getElementById('deleteBatchBtn');
+            const equityCurveBadge = document.getElementById('equityCurveBadge');
+            
+            if (!batchId) {
+                document.getElementById('statsContainer').style.display = 'none';
+                deleteBatchBtn.style.display = 'none';
+                equityCurveBadge.style.display = 'none';
+                return;
+            }
+
+            // Afficher le bouton de suppression
+            deleteBatchBtn.style.display = 'block';
+            
+            // Afficher le badge si equity curves disponibles
+            equityCurveBadge.style.display = hasEquityCurves ? 'block' : 'none';
+
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '<tr><td colspan="11" class="loading">Chargement des résultats...</td></tr>';
+            
+            document.getElementById('statsContainer').style.display = 'block';
+
+            try {
+                const response = await fetch(`/money-management/batch/${batchId}/stats/`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur lors du chargement');
+                }
+
+                // Mettre à jour les cartes de résumé
+                updateSummaryCards(data);
+
+                // Convertir en tableau
+                currentData = Object.entries(data.strategies).map(([key, strategy]) => ({
+                    key: key,
+                    name: strategy.strategy_name,
+                    num_sims: strategy.num_simulations,
+                    perf_median: strategy.performance.median,
+                    perf_avg: strategy.performance.avg,
+                    perf_max: strategy.performance.max,
+                    dd_avg: strategy.drawdown.avg,
+                    dd_median: strategy.drawdown.median,
+                    dd_max: strategy.drawdown.max,
+                    success_rate: strategy.success_rate_avg,
+                    wins_consec: strategy.consecutive_wins_avg,
+                    losses_consec: strategy.consecutive_losses_avg
+                }));
+
+                sortTable();
+
+            } catch (error) {
+                resultsBody.innerHTML = `<tr><td colspan="11" class="no-data">❌ Erreur: ${error.message}</td></tr>`;
+            }
+        }
+
+        function updateSummaryCards(data) {
+            const summaryCards = document.getElementById('summaryCards');
+            
+            // Calculer les statistiques globales
+            const strategies = Object.values(data.strategies);
+            const totalSimulations = strategies.reduce((sum, s) => sum + s.num_simulations, 0);
+            const avgPerf = strategies.reduce((sum, s) => sum + s.performance.median, 0) / strategies.length;
+            const avgDD = strategies.reduce((sum, s) => sum + s.drawdown.avg, 0) / strategies.length;
+            const bestStrategy = strategies.reduce((best, s) => 
+                s.performance.median > best.performance.median ? s : best
+            );
+
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h3>Total Simulations</h3>
+                    <div class="value">${totalSimulations}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Stratégies Testées</h3>
+                    <div class="value">${strategies.length}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Perf Médiane Moyenne</h3>
+                    <div class="value">${avgPerf.toFixed(2)}%</div>
+                </div>
+                <div class="summary-card">
+                    <h3>DD Moyen Global</h3>
+                    <div class="value">${avgDD.toFixed(2)}%</div>
+                </div>
+            `;
+        }
+
+        function sortTable() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            switch(sortBy) {
+                case 'perf_desc':
+                    currentData.sort((a, b) => b.perf_median - a.perf_median);
+                    break;
+                case 'perf_asc':
+                    currentData.sort((a, b) => a.perf_median - b.perf_median);
+                    break;
+                case 'dd_asc':
+                    currentData.sort((a, b) => a.dd_avg - b.dd_avg);
+                    break;
+                case 'dd_desc':
+                    currentData.sort((a, b) => b.dd_avg - a.dd_avg);
+                    break;
+                case 'success_desc':
+                    currentData.sort((a, b) => b.success_rate - a.success_rate);
+                    break;
+            }
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const resultsBody = document.getElementById('resultsBody');
+            
+            if (currentData.length === 0) {
+                resultsBody.innerHTML = '<tr><td colspan="11" class="no-data">Aucun résultat trouvé</td></tr>';
+                return;
+            }
+
+            resultsBody.innerHTML = currentData.map(row => {
+                const perfClass = row.perf_median > 0 ? 'perf-positive' : 'perf-negative';
+                const ddClass = row.dd_avg > -20 ? 'dd-good' : (row.dd_avg > -35 ? 'dd-warning' : 'dd-danger');
+
+                return `
+                    <tr onclick="showStrategyDetails('${row.key}', '${row.name}')" title="Cliquer pour voir les détails des ${row.num_sims} simulations">
+                        <td class="strategy-name">${row.name} 🔍</td>
+                        <td>${row.num_sims}</td>
+                        <td class="${perfClass}">${row.perf_median.toFixed(2)}%</td>
+                        <td class="${perfClass}">${row.perf_avg.toFixed(2)}%</td>
+                        <td class="${perfClass}">${row.perf_max.toFixed(2)}%</td>
+                        <td class="${ddClass}">${row.dd_avg.toFixed(2)}%</td>
+                        <td class="${ddClass}">${row.dd_median.toFixed(2)}%</td>
+                        <td class="${ddClass}">${row.dd_max.toFixed(2)}%</td>
+                        <td>${row.success_rate.toFixed(2)}%</td>
+                        <td>${row.wins_consec.toFixed(1)}</td>
+                        <td>${row.losses_consec.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Auto-charger le premier batch si disponible
+        window.addEventListener('DOMContentLoaded', () => {
+            const batchSelect = document.getElementById('batchSelect');
+            if (batchSelect.options.length > 1) {
+                // Sélectionner automatiquement le premier batch (le plus récent)
+                const urlParams = new URLSearchParams(window.location.search);
+                const batchId = urlParams.get('batch_id');
+                
+                if (batchId) {
+                    batchSelect.value = batchId;
+                    loadBatchResults();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

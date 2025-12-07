@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Simulation Runner - Money Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .batch-config {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .simulation-configs {
+            margin-top: 30px;
+        }
+
+        .sim-config-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .sim-config-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .param-input {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .param-input label {
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .param-input input {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .add-sim-btn {
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .add-sim-btn:hover {
+            background: #218838;
+        }
+
+        .run-batch-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        .run-batch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .run-batch-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .status-message {
+            text-align: center;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .results-link {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #d4edda;
+            border-radius: 8px;
+            color: #155724;
+        }
+
+        .results-link a {
+            color: #155724;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .results-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 8px;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Batch Simulation Runner</h1>
+        <p class="subtitle">Lancez des simulations en masse pour comparer les performances des stratégies</p>
+
+        <div class="nav-buttons">
+            <a href="/" class="btn btn-secondary">🏠 Accueil</a>
+            <a href="{% url 'money_management:visualizer_view' %}" class="btn btn-secondary">← Visualiseur</a>
+            <a href="{% url 'money_management:batch_results' %}" class="btn btn-primary">📊 Voir les Résultats</a>
+        </div>
+
+        <div class="batch-config">
+            <div class="form-group">
+                <label for="batchName">Nom du Batch</label>
+                <input type="text" id="batchName" placeholder="Ex: Comparaison Stratégies DD - Dec 2025">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px; margin-top: 15px;">
+                <input type="checkbox" id="saveEquityCurves" style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="saveEquityCurves" style="cursor: pointer; user-select: none; margin: 0;">
+                    <strong>💾 Sauvegarder les equity curves</strong>
+                    <div style="font-size: 0.9em; color: #856404; margin-top: 5px;">
+                        ⚠️ Permet de visualiser l'évolution du capital trade par trade, mais ralentit le batch (stockage ~1000 valeurs/simulation)
+                    </div>
+                </label>
+            </div>
+
+            <div class="simulation-configs" id="simulationConfigs">
+                <!-- Les configurations seront ajoutées ici -->
+            </div>
+
+            <button class="add-sim-btn" onclick="addSimulationConfig()">+ Ajouter une Configuration</button>
+        </div>
+
+        <button class="run-batch-btn" id="runBatchBtn" onclick="runBatch()">▶️ LANCER LE BATCH</button>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+            <div class="status-message" id="statusMessage">Initialisation...</div>
+        </div>
+
+        <div class="results-link" id="resultsLink">
+            ✅ Batch terminé ! <a href="#" id="resultsLinkUrl">Voir les résultats détaillés</a>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        const strategies = {{ strategies_json|safe }};
+        let configCounter = 0;
+
+        function addSimulationConfig() {
+            configCounter++;
+            const configsContainer = document.getElementById('simulationConfigs');
+            
+            const configCard = document.createElement('div');
+            configCard.className = 'sim-config-card';
+            configCard.id = `sim-config-${configCounter}`;
+            
+            let strategyOptions = strategies.map(s => 
+                `<option value="${s.key}">${s.name}</option>`
+            ).join('');
+            
+            configCard.innerHTML = `
+                <h3>
+                    Configuration #${configCounter}
+                    <button class="remove-btn" onclick="removeConfig(${configCounter})">✕ Supprimer</button>
+                </h3>
+                
+                <div class="form-group">
+                    <label>Stratégie</label>
+                    <select id="strategy-${configCounter}" onchange="updateParams(${configCounter})">
+                        <option value="">-- Sélectionner une stratégie --</option>
+                        ${strategyOptions}
+                    </select>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label>Nombre de simulations</label>
+                        <input type="number" id="numSims-${configCounter}" value="20" min="1" max="1000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nombre de trades</label>
+                        <input type="number" id="numTrades-${configCounter}" value="3000" min="100" max="100000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Capital initial (€)</label>
+                        <input type="number" id="capital-${configCounter}" value="10000" min="1000" step="1000">
+                    </div>
+                </div>
+                
+                <div class="params-grid" id="params-${configCounter}">
+                    <!-- Les paramètres de la stratégie seront ajoutés ici -->
+                </div>
+            `;
+            
+            configsContainer.appendChild(configCard);
+        }
+
+        function removeConfig(id) {
+            const config = document.getElementById(`sim-config-${id}`);
+            if (config) {
+                config.remove();
+            }
+        }
+
+        function updateParams(configId) {
+            const strategySelect = document.getElementById(`strategy-${configId}`);
+            const strategyKey = strategySelect.value;
+            const paramsContainer = document.getElementById(`params-${configId}`);
+            
+            if (!strategyKey) {
+                paramsContainer.innerHTML = '';
+                return;
+            }
+            
+            const strategy = strategies.find(s => s.key === strategyKey);
+            if (!strategy) return;
+            
+            paramsContainer.innerHTML = '';
+            
+            for (const [paramKey, paramValue] of Object.entries(strategy.params)) {
+                const paramDiv = document.createElement('div');
+                paramDiv.className = 'param-input';
+                paramDiv.innerHTML = `
+                    <label>${paramKey}</label>
+                    <input type="number" 
+                           id="param-${configId}-${paramKey}" 
+                           value="${paramValue}" 
+                           step="0.1">
+                `;
+                paramsContainer.appendChild(paramDiv);
+            }
+        }
+
+        async function runBatch() {
+            const batchName = document.getElementById('batchName').value || `Batch ${new Date().toLocaleString()}`;
+            const configsContainer = document.getElementById('simulationConfigs');
+            const configCards = configsContainer.getElementsByClassName('sim-config-card');
+            
+            if (configCards.length === 0) {
+                alert('Veuillez ajouter au moins une configuration de simulation');
+                return;
+            }
+            
+            // Collecter toutes les configurations
+            const simulations = [];
+            
+            for (let i = 1; i <= configCounter; i++) {
+                const configCard = document.getElementById(`sim-config-${i}`);
+                if (!configCard) continue;
+                
+                const strategyKey = document.getElementById(`strategy-${i}`).value;
+                if (!strategyKey) continue;
+                
+                const numSimulations = parseInt(document.getElementById(`numSims-${i}`).value);
+                const numTrades = parseInt(document.getElementById(`numTrades-${i}`).value);
+                const initialCapital = parseInt(document.getElementById(`capital-${i}`).value);
+                
+                // Collecter les paramètres
+                const strategy = strategies.find(s => s.key === strategyKey);
+                const params = {};
+                
+                for (const paramKey of Object.keys(strategy.params)) {
+                    const paramInput = document.getElementById(`param-${i}-${paramKey}`);
+                    if (paramInput) {
+                        params[paramKey] = parseFloat(paramInput.value);
+                    }
+                }
+                
+                simulations.push({
+                    strategy_key: strategyKey,
+                    num_simulations: numSimulations,
+                    num_trades: numTrades,
+                    initial_capital: initialCapital,
+                    params: params
+                });
+            }
+            
+            if (simulations.length === 0) {
+                alert('Aucune configuration valide trouvée');
+                return;
+            }
+            
+            // Calculer le nombre total de simulations
+            const totalSims = simulations.reduce((sum, s) => sum + s.num_simulations, 0);
+            
+            // Afficher la progression
+            const runBtn = document.getElementById('runBatchBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const statusMessage = document.getElementById('statusMessage');
+            const resultsLink = document.getElementById('resultsLink');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            runBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            resultsLink.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            // Afficher un message pour inviter à regarder la console
+            console.log('═'.repeat(80));
+            console.log(`🚀 LANCEMENT DU BATCH: ${batchName}`);
+            console.log(`📊 Total de simulations: ${totalSims}`);
+            console.log(`⏰ Début: ${new Date().toLocaleTimeString()}`);
+            console.log('═'.repeat(80));
+            console.log('💡 Suivez la progression détaillée ci-dessous:');
+            console.log('');
+            
+            statusMessage.innerHTML = `🚀 Lancement de ${totalSims} simulations...<br><small style="opacity: 0.7;">💡 Ouvrez la console (F12) pour suivre la progression détaillée</small>`;
+            progressFill.style.width = '5%';
+            progressFill.textContent = '5%';
+            
+            try {
+                // Créer un timestamp pour simuler la progression
+                const startTime = Date.now();
+                const estimatedTimePerSim = 50; // ms par simulation (estimation)
+                const totalEstimatedTime = totalSims * estimatedTimePerSim;
+                
+                // Animation de progression pendant l'exécution
+                const progressInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const estimatedProgress = Math.min(95, (elapsed / totalEstimatedTime) * 100);
+                    progressFill.style.width = `${estimatedProgress}%`;
+                    progressFill.textContent = `${Math.floor(estimatedProgress)}%`;
+                    statusMessage.textContent = `⏳ Exécution en cours... (~${Math.floor(estimatedProgress)}% estimé)`;
+                }, 500);
+                
+                // Récupérer l'option d'equity curves
+                const saveEquityCurves = document.getElementById('saveEquityCurves').checked;
+                
+                const response = await fetch('/money-management/batch/run/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        batch_name: batchName,
+                        simulations: simulations,
+                        save_equity_curves: saveEquityCurves
+                    })
+                });
+                
+                clearInterval(progressInterval);
+                const result = await response.json();
+                
+                if (result.success) {
+                    progressFill.style.width = '100%';
+                    progressFill.textContent = '100%';
+                    statusMessage.textContent = `✅ ${result.completed}/${totalSims} simulations terminées avec succès !`;
+                    
+                    if (result.completed < totalSims) {
+                        statusMessage.textContent += ` (${totalSims - result.completed} échouées - voir console pour détails)`;
+                    }
+                    
+                    // Afficher le lien vers les résultats
+                    resultsLink.style.display = 'block';
+                    const resultsLinkUrl = document.getElementById('resultsLinkUrl');
+                    resultsLinkUrl.href = `/money-management/batch/results/?batch_id=${result.batch_id}`;
+                    
+                    runBtn.disabled = false;
+                } else {
+                    throw new Error(result.error || 'Erreur inconnue');
+                }
+                
+            } catch (error) {
+                progressFill.style.width = '100%';
+                progressFill.style.background = '#dc3545';
+                progressFill.textContent = 'Erreur';
+                statusMessage.textContent = '❌ Une erreur est survenue';
+                
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = `Erreur: ${error.message}`;
+                
+                runBtn.disabled = false;
+            }
+        }
+
+        // Ajouter une configuration par défaut au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            addSimulationConfig();
+        });
+    </script>
+</body>
+</html>
