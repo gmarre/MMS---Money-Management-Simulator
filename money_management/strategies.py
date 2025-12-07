@@ -33,7 +33,7 @@ def strategy_1_drawdown_lineaire(history, capital, dd1=5, dd2=20, base_risk=1.0)
         return base_risk * (1 - 0.8 * ratio)
 
 
-def strategy_2_dd_lineaire(history, capital, base_risk=1.0, dd_step=5, decay=0.8):
+def strategy_2_dd_lineaire(history, capital, base_risk=1.0, dd_step=5, decay=0.8, min_risk=0.1):
     """
     Drawdown linéaire : réduit le risque par paliers de DD
     
@@ -41,6 +41,7 @@ def strategy_2_dd_lineaire(history, capital, base_risk=1.0, dd_step=5, decay=0.8
         base_risk: Risque de base en % (défaut: 1.0%)
         dd_step: Intervalle DD (%) pour chaque réduction (défaut: 5%)
         decay: Facteur de décroissance (défaut: 0.8)
+        min_risk: Risque minimum en % (défaut: 0.1%)
     """
     if not history:
         return base_risk
@@ -50,7 +51,10 @@ def strategy_2_dd_lineaire(history, capital, base_risk=1.0, dd_step=5, decay=0.8
     
     # Nombre de paliers de DD
     steps = max(0, int(abs(dd) / dd_step))
-    return base_risk * (decay ** steps)
+    risk = base_risk * (decay ** steps)
+    
+    # Appliquer le seuil minimum
+    return max(min_risk, risk)
 
 
 def strategy_3_mode_securite(history, capital, base_risk=1.0, dd_threshold=15, safe_risk=0.25):
@@ -191,7 +195,7 @@ def strategy_8_ath_distance(history, capital, base_risk=1.0, ath_distance=10, bo
     return boost_risk if distance < ath_distance else base_risk
 
 
-def strategy_9_anti_martingale_inversee(history, capital, base_risk=1.0, up_factor=1.2, down_factor=0.8):
+def strategy_9_anti_martingale_inversee(history, capital, base_risk=1.0, up_factor=1.2, down_factor=0.8, min_risk=0.1, max_risk=5.0):
     """
     Anti-martingale inversée : augmente après perte, réduit après gain
     
@@ -199,6 +203,8 @@ def strategy_9_anti_martingale_inversee(history, capital, base_risk=1.0, up_fact
         base_risk: Risque de base en % (défaut: 1.0%)
         up_factor: Facteur d'augmentation après perte (défaut: 1.2)
         down_factor: Facteur de réduction après gain (défaut: 0.8)
+        min_risk: Risque minimum en % (défaut: 0.1%)
+        max_risk: Risque maximum en % (défaut: 5.0%)
     """
     if not history:
         return base_risk
@@ -206,7 +212,10 @@ def strategy_9_anti_martingale_inversee(history, capital, base_risk=1.0, up_fact
     last_trade = history[-1]
     was_win = last_trade['profit_loss'] > 0
     
-    return base_risk * down_factor if was_win else base_risk * up_factor
+    risk = base_risk * down_factor if was_win else base_risk * up_factor
+    
+    # Appliquer les seuils min et max
+    return max(min_risk, min(risk, max_risk))
 
 
 def strategy_10_pertes_consecutives(history, capital, base_risk=1.0, loss_streak=3, reduced_risk=0.5):
@@ -246,7 +255,7 @@ def strategy_11_gestion_grosses_pertes(history, capital, base_risk=1.0, threshol
     return emergency_risk if loss_R >= threshold_R else base_risk
 
 
-def strategy_13_anti_martingale_classique(history, capital, base_risk=1.0, up_factor=1.2, down_factor=0.8):
+def strategy_13_anti_martingale_classique(history, capital, base_risk=1.0, up_factor=1.2, down_factor=0.8, min_risk=0.1, max_risk=5.0):
     """
     Anti-martingale classique : augmente après gain, réduit après perte
     
@@ -254,6 +263,8 @@ def strategy_13_anti_martingale_classique(history, capital, base_risk=1.0, up_fa
         base_risk: Risque de base en % (défaut: 1.0%)
         up_factor: Facteur d'augmentation après gain (défaut: 1.2)
         down_factor: Facteur de réduction après perte (défaut: 0.8)
+        min_risk: Risque minimum en % (défaut: 0.1%)
+        max_risk: Risque maximum en % (défaut: 5.0%)
     """
     if not history:
         return base_risk
@@ -261,7 +272,10 @@ def strategy_13_anti_martingale_classique(history, capital, base_risk=1.0, up_fa
     last_trade = history[-1]
     was_win = last_trade['profit_loss'] > 0
     
-    return base_risk * up_factor if was_win else base_risk * down_factor
+    risk = base_risk * up_factor if was_win else base_risk * down_factor
+    
+    # Appliquer les seuils min et max
+    return max(min_risk, min(risk, max_risk))
 
 
 def strategy_13_serie_gains(history, capital, base_risk=1.0, gain_streak=3, boosted_risk=1.5):
@@ -510,7 +524,7 @@ STRATEGIES = {
     'strategy_2': {
         'name': 'Drawdown Géométrique',
         'function': strategy_2_dd_lineaire,
-        'params': {'base_risk': 1.0, 'dd_step': 5, 'decay': 0.8},
+        'params': {'base_risk': 1.0, 'dd_step': 5, 'decay': 0.8, 'min_risk': 0.1},
         'description': 'Réduction exponentielle du risque selon le DD'
     },
     'strategy_3': {
@@ -552,7 +566,7 @@ STRATEGIES = {
     'strategy_9': {
         'name': 'Anti-Martingale Inversée',
         'function': strategy_9_anti_martingale_inversee,
-        'params': {'base_risk': 1.0, 'up_factor': 1.2, 'down_factor': 0.8},
+        'params': {'base_risk': 1.0, 'up_factor': 1.2, 'down_factor': 0.8, 'min_risk': 0.1, 'max_risk': 5.0},
         'description': 'Augmente après perte, réduit après gain'
     },
     'strategy_10': {
@@ -570,7 +584,7 @@ STRATEGIES = {
     'strategy_12': {
         'name': 'Anti-Martingale Classique',
         'function': strategy_13_anti_martingale_classique,
-        'params': {'base_risk': 1.0, 'up_factor': 1.2, 'down_factor': 0.8},
+        'params': {'base_risk': 1.0, 'up_factor': 1.2, 'down_factor': 0.8, 'min_risk': 0.1, 'max_risk': 5.0},
         'description': 'Augmente après gain, réduit après perte'
     },
     'strategy_13': {

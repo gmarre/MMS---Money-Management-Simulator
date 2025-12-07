@@ -458,7 +458,7 @@
             const key = strategy.key;
 
             // ============ S1, S2, S3: Stratégies basées sur le Drawdown ============
-            if (key.includes('strategy_1') || key.includes('strategy_2') || key.includes('strategy_3')) {
+            if (key === 'strategy_1' || key === 'strategy_2' || key === 'strategy_3') {
                 return {
                     chartTitle: 'Évolution du Risque en fonction du Drawdown',
                     xAxisLabel: 'Drawdown (%)',
@@ -469,7 +469,8 @@
                         'dd_step': { label: 'Palier DD', min: 1, max: 15, step: 1, unit: '%' },
                         'decay': { label: 'Décroissance', min: 0.5, max: 0.95, step: 0.05, unit: '' },
                         'dd_threshold': { label: 'Seuil DD', min: 5, max: 30, step: 1, unit: '%' },
-                        'safe_risk': { label: 'Risque sécurité', min: 0.1, max: 1, step: 0.05, unit: '%' }
+                        'safe_risk': { label: 'Risque sécurité', min: 0.1, max: 1, step: 0.05, unit: '%' },
+                        'min_risk': { label: 'Risque MINIMUM', min: 0.05, max: 2, step: 0.05, unit: '%' }
                     },
                     generateData: (params) => {
                         const labels = [];
@@ -481,7 +482,7 @@
                             
                             // Calculer le risque selon la stratégie
                             let risk;
-                            if (key.includes('strategy_1')) {
+                            if (key === 'strategy_1') {
                                 // Drawdown Linéaire
                                 const base_risk = params.base_risk || 1;
                                 const dd1 = params.dd1 || 5;
@@ -495,14 +496,18 @@
                                     const ratio = (Math.abs(dd) - dd1) / (dd2 - dd1);
                                     risk = base_risk * (1 - 0.7 * ratio);
                                 }
-                            } else if (key.includes('strategy_2')) {
+                            } else if (key === 'strategy_2') {
                                 // Drawdown Géométrique
                                 const base_risk = params.base_risk || 1;
                                 const dd_step = params.dd_step || 5;
                                 const decay = params.decay || 0.8;
+                                const min_risk = params.min_risk || 0.1;
                                 
                                 const steps = Math.max(0, Math.floor(Math.abs(dd) / dd_step));
                                 risk = base_risk * Math.pow(decay, steps);
+                                
+                                // Appliquer le seuil minimum
+                                risk = Math.max(min_risk, risk);
                             } else {
                                 // Mode Sécurité
                                 const base_risk = params.base_risk || 1;
@@ -544,7 +549,7 @@
             }
 
             // ============ S4: DD Max Historique ============
-            if (key.includes('strategy_4')) {
+            if (key === 'strategy_4') {
                 return {
                     chartTitle: 'Risque en fonction du Ratio DD Actuel / DD Max',
                     xAxisLabel: 'Ratio DD / DD Max',
@@ -594,7 +599,7 @@
             }
 
             // ============ S5, S6: Scaling sur Capital ============
-            if (key.includes('strategy_5') || key.includes('strategy_6')) {
+            if (key === 'strategy_5' || key === 'strategy_6') {
                 return {
                     chartTitle: 'Risque en fonction de la Performance (%)',
                     xAxisLabel: 'Performance par rapport au capital initial (%)',
@@ -616,7 +621,7 @@
                             labels.push(perf.toFixed(0));
                             
                             let risk;
-                            if (key.includes('strategy_5')) {
+                            if (key === 'strategy_5') {
                                 const gain_step = params.gain_step || 10;
                                 const increment = params.increment || 0.1;
                                 const steps = Math.floor(perf / gain_step);
@@ -660,7 +665,7 @@
             }
 
             // ============ S7: Risk Reset ============
-            if (key.includes('strategy_7')) {
+            if (key === 'strategy_7') {
                 return {
                     chartTitle: 'Risque en fonction du Nombre de Trades sans ATH',
                     xAxisLabel: 'Trades sans nouveau plus-haut',
@@ -710,7 +715,7 @@
             }
 
             // ============ S8: ATH Distance ============
-            if (key.includes('strategy_8')) {
+            if (key === 'strategy_8') {
                 return {
                     chartTitle: 'Risque en fonction de la Distance à l\'ATH',
                     xAxisLabel: 'Distance à l\'ATH (%)',
@@ -759,83 +764,263 @@
                 };
             }
 
-            // ============ S9, S10, S11: Martingale et variantes ============
-            if (key.includes('strategy_9') || key.includes('strategy_10') || key.includes('strategy_11')) {
+            // ============ S9: Anti-Martingale Inversée ============
+            if (key === 'strategy_9') {
                 return {
-                    chartTitle: 'Risque en fonction des Trades Consécutifs',
-                    xAxisLabel: 'Nombre de trades (gains ou pertes selon la stratégie)',
+                    chartTitle: 'Risque selon Dernier Résultat (Anti-Martingale Inversée)',
+                    xAxisLabel: 'Résultat du dernier trade',
                     paramRanges: {
                         'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
-                        'up_factor': { label: 'Facteur hausse', min: 1.1, max: 2, step: 0.1, unit: 'x' },
-                        'down_factor': { label: 'Facteur baisse', min: 0.5, max: 0.9, step: 0.1, unit: 'x' },
-                        'multiplier': { label: 'Multiplicateur', min: 1.2, max: 3, step: 0.1, unit: 'x' },
-                        'max_risk': { label: 'Risque max', min: 2, max: 10, step: 0.5, unit: '%' }
+                        'up_factor': { label: 'Facteur après PERTE', min: 1.1, max: 2, step: 0.1, unit: 'x' },
+                        'down_factor': { label: 'Facteur après GAIN', min: 0.5, max: 0.9, step: 0.05, unit: 'x' },
+                        'min_risk': { label: 'Risque MINIMUM', min: 0.05, max: 2, step: 0.05, unit: '%' },
+                        'max_risk': { label: 'Risque MAXIMUM', min: 2, max: 10, step: 0.5, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = ['GAIN', 'PERTE'];
+                        const base_risk = params.base_risk || 1.0;
+                        const up_factor = params.up_factor || 1.2;
+                        const down_factor = params.down_factor || 0.8;
+                        const min_risk = params.min_risk || 0.1;
+                        const max_risk = params.max_risk || 5.0;
+                        
+                        // Calculer les risques avec application des seuils min/max
+                        // INVERSÉ : down_factor après GAIN, up_factor après PERTE
+                        let risk_after_gain = base_risk * down_factor;
+                        let risk_after_loss = base_risk * up_factor;
+                        
+                        risk_after_gain = Math.max(min_risk, Math.min(risk_after_gain, max_risk));
+                        risk_after_loss = Math.max(min_risk, Math.min(risk_after_loss, max_risk));
+                        
+                        const risks = [risk_after_gain, risk_after_loss];
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                backgroundColor: ['rgba(40, 167, 69, 0.7)', 'rgba(220, 53, 69, 0.7)'],
+                                borderColor: ['#28a745', '#dc3545'],
+                                borderWidth: 2
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Contre-intuitif mais logique : réduit le risque après gain (prudence après succès)',
+                        'Augmente le risque après perte (profite d\'un potentiel retour à la moyenne)',
+                        'Peut aider à récupérer rapidement après des pertes si le marché se retourne',
+                        'Évite de sur-risquer après des séries gagnantes qui pourraient se terminer brutalement'
+                    ],
+                    weaknesses: [
+                        'Psychologiquement difficile : augmenter le risque après perte va contre l\'instinct',
+                        'Dangereux en série de pertes prolongée : le risque continue d\'augmenter',
+                        'Réduit les gains potentiels en période gagnante (baisse du risque)',
+                        'Suppose un retour à la moyenne qui n\'est pas garanti en trading'
+                    ]
+                };
+            }
+
+            // ============ S10: 3 Pertes Consécutives ============
+            if (key.includes('strategy_10')) {
+                return {
+                    chartTitle: 'Risque selon Pertes Consécutives',
+                    xAxisLabel: 'Nombre de pertes consécutives',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'loss_streak': { label: 'Seuil de pertes', min: 2, max: 10, step: 1, unit: ' trades' },
+                        'reduced_risk': { label: 'Risque réduit', min: 0.1, max: 2, step: 0.1, unit: '%' }
                     },
                     generateData: (params) => {
                         const labels = [];
-                        const winsData = [];
-                        const lossesData = [];
+                        const risks = [];
                         const base_risk = params.base_risk || 1.0;
+                        const loss_streak = params.loss_streak || 3;
+                        const reduced_risk = params.reduced_risk || 0.5;
                         
                         for (let n = 0; n <= 10; n++) {
                             labels.push(n.toString());
-                            
-                            let riskWin, riskLoss;
-                            
-                            if (key.includes('strategy_9')) {
-                                const up_factor = params.up_factor || 1.2;
-                                const down_factor = params.down_factor || 0.8;
-                                riskWin = base_risk * Math.pow(up_factor, n);
-                                riskLoss = base_risk * Math.pow(down_factor, n);
-                            } else if (key.includes('strategy_10')) {
-                                const multiplier = params.multiplier || 2;
-                                const max_risk = params.max_risk || 5;
-                                riskWin = base_risk;
-                                riskLoss = Math.min(base_risk * Math.pow(multiplier, n), max_risk);
-                            } else {
-                                const multiplier = params.multiplier || 1.5;
-                                const max_risk = params.max_risk || 5;
-                                riskWin = Math.min(base_risk * Math.pow(multiplier, n), max_risk);
-                                riskLoss = base_risk;
-                            }
-                            
-                            winsData.push(Math.min(riskWin, 10));
-                            lossesData.push(Math.min(riskLoss, 10));
+                            risks.push(n >= loss_streak ? reduced_risk : base_risk);
                         }
                         
                         return {
                             labels: labels,
-                            datasets: [
-                                {
-                                    label: 'Après gains consécutifs',
-                                    data: winsData,
-                                    borderColor: '#28a745',
-                                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                                    borderWidth: 2,
-                                    fill: false
-                                },
-                                {
-                                    label: 'Après pertes consécutives',
-                                    data: lossesData,
-                                    borderColor: '#dc3545',
-                                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                                    borderWidth: 2,
-                                    fill: false
-                                }
-                            ]
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0
+                            }]
                         };
                     },
                     strengths: [
-                        'S9 (Anti-Martingale): Profite des streaks gagnantes en augmentant l\'exposition, réduit les pertes après défaites',
-                        'S10 (Martingale classique): Peut récupérer rapidement après pertes si retournement favorable',
-                        'S11 (Martingale inversée): Capitalise agressivement sur les séries gagnantes',
-                        'Stratégies mécaniques simples à implémenter et à comprendre'
+                        'Protection simple et efficace contre les séries de pertes',
+                        'Réduit automatiquement l\'exposition en période difficile',
+                        'Limite les dégâts : évite d\'aggraver une mauvaise passe',
+                        'Facile à comprendre et à implémenter'
                     ],
                     weaknesses: [
-                        'S9: Réduit le risque après pertes, ce qui peut empêcher une récupération rapide',
-                        'S10 (TRÈS DANGEREUX): Augmente le risque après pertes - chemin rapide vers la ruine en série noire',
-                        'S11: Augmente drastiquement le risque après gains - une correction brutale peut tout effacer',
-                        'Toutes sont vulnérables aux séquences longues : le risque explose rapidement'
+                        'Peut rater des opportunités de récupération en restant trop prudent',
+                        'Ne détecte pas la fin de la série noire : reste en mode réduit',
+                        'Arbitraire : pourquoi 3 pertes et pas 2 ou 4 ?',
+                        'Ne tient pas compte de l\'ampleur des pertes (3x-0.5R vs 3x-3R)'
+                    ]
+                };
+            }
+
+            // ============ S11: Gestion Grosses Pertes ============
+            if (key.includes('strategy_11')) {
+                return {
+                    chartTitle: 'Risque selon Ampleur de la Dernière Perte',
+                    xAxisLabel: 'Perte du dernier trade (en R)',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'threshold_R': { label: 'Seuil de perte', min: 1, max: 10, step: 0.5, unit: 'R' },
+                        'emergency_risk': { label: 'Risque d\'urgence', min: 0.1, max: 1, step: 0.05, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const threshold_R = params.threshold_R || 3;
+                        const emergency_risk = params.emergency_risk || 0.3;
+                        
+                        for (let loss = 0; loss <= 10; loss += 0.5) {
+                            labels.push(loss.toFixed(1) + 'R');
+                            risks.push(loss >= threshold_R ? emergency_risk : base_risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#e74c3c',
+                                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Réagit à l\'ampleur des pertes, pas juste au nombre',
+                        'Protection d\'urgence après un trade catastrophique',
+                        'Permet de reprendre progressivement après un choc',
+                        'Évite l\'effet domino : une grosse perte n\'entraîne pas d\'autres grosses pertes'
+                    ],
+                    weaknesses: [
+                        'Basé uniquement sur le dernier trade : ignore l\'historique récent',
+                        'Peut surréagir à une perte isolée dans un contexte par ailleurs sain',
+                        'Ne distingue pas grosse perte malchanceuse vs erreur de trading',
+                        'Difficile de sortir du mode urgence : un seul trade ne suffit pas'
+                    ]
+                };
+            }
+
+            // ============ S12: Anti-Martingale Classique ============
+            if (key.includes('strategy_12')) {
+                return {
+                    chartTitle: 'Risque selon Dernier Résultat (Anti-Martingale)',
+                    xAxisLabel: 'Résultat du dernier trade',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'up_factor': { label: 'Facteur après GAIN', min: 1.1, max: 2, step: 0.1, unit: 'x' },
+                        'down_factor': { label: 'Facteur après PERTE', min: 0.5, max: 0.9, step: 0.05, unit: 'x' },
+                        'min_risk': { label: 'Risque MINIMUM', min: 0.05, max: 2, step: 0.05, unit: '%' },
+                        'max_risk': { label: 'Risque MAXIMUM', min: 2, max: 10, step: 0.5, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = ['PERTE', 'GAIN'];
+                        const base_risk = params.base_risk || 1.0;
+                        const up_factor = params.up_factor || 1.2;
+                        const down_factor = params.down_factor || 0.8;
+                        const min_risk = params.min_risk || 0.1;
+                        const max_risk = params.max_risk || 5.0;
+                        
+                        // Calculer les risques avec application des seuils min/max
+                        let risk_after_loss = base_risk * down_factor;
+                        let risk_after_gain = base_risk * up_factor;
+                        
+                        risk_after_loss = Math.max(min_risk, Math.min(risk_after_loss, max_risk));
+                        risk_after_gain = Math.max(min_risk, Math.min(risk_after_gain, max_risk));
+                        
+                        const risks = [risk_after_loss, risk_after_gain];
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                backgroundColor: ['rgba(220, 53, 69, 0.7)', 'rgba(40, 167, 69, 0.7)'],
+                                borderColor: ['#dc3545', '#28a745'],
+                                borderWidth: 2
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Classique et éprouvé : augmente le risque après gain, réduit après perte',
+                        'Capitalise sur les séries gagnantes (momentum)',
+                        'Protège le capital en période difficile',
+                        'Psychologiquement aligné : on ose plus après succès'
+                    ],
+                    weaknesses: [
+                        'Peut manquer le début d\'un rebond (risque réduit après pertes)',
+                        'Vulnérable aux retournements brutaux après séries gagnantes',
+                        'Suppose que les résultats sont corrélés (momentum) - pas toujours vrai',
+                        'Simple binaire : ne tient pas compte de l\'ampleur du gain/perte'
+                    ]
+                };
+            }
+
+            // ============ S13: Série de Gains ============
+            if (key.includes('strategy_13')) {
+                return {
+                    chartTitle: 'Risque selon Gains Consécutifs',
+                    xAxisLabel: 'Nombre de gains consécutifs',
+                    paramRanges: {
+                        'base_risk': { label: 'Risque de base', min: 0.1, max: 5, step: 0.1, unit: '%' },
+                        'gain_streak': { label: 'Seuil de gains', min: 2, max: 10, step: 1, unit: ' trades' },
+                        'boosted_risk': { label: 'Risque boosté', min: 1, max: 5, step: 0.1, unit: '%' }
+                    },
+                    generateData: (params) => {
+                        const labels = [];
+                        const risks = [];
+                        const base_risk = params.base_risk || 1.0;
+                        const gain_streak = params.gain_streak || 3;
+                        const boosted_risk = params.boosted_risk || 1.5;
+                        
+                        for (let n = 0; n <= 10; n++) {
+                            labels.push(n.toString());
+                            risks.push(n >= gain_streak ? boosted_risk : base_risk);
+                        }
+                        
+                        return {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Risque (%)',
+                                data: risks,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0
+                            }]
+                        };
+                    },
+                    strengths: [
+                        'Capitalise sur le momentum : accélère quand ça marche',
+                        'Maximise les profits pendant les bonnes périodes',
+                        'Psychologiquement positif : récompense les succès',
+                        'Permet de compenser rapidement les pertes passées'
+                    ],
+                    weaknesses: [
+                        'TRÈS DANGEREUX : augmente le risque juste avant le retournement',
+                        'Une correction brutale après boost = pertes massives',
+                        'Suppose que les gains sont corrélés - souvent faux',
+                        'Peut transformer une belle série en catastrophe'
                     ]
                 };
             }
@@ -1078,7 +1263,7 @@
             }
 
             // ============ S16, S17, S18: Combinaisons Multi-Signaux ============
-            if (key.includes('strategy_16') || key.includes('strategy_17') || key.includes('strategy_18')) {
+            if (key === 'strategy_16' || key === 'strategy_17' || key === 'strategy_18') {
                 return {
                     chartTitle: 'Risque selon Combinaison de Signaux',
                     xAxisLabel: 'Score de condition de marché (-3 à +3)',
