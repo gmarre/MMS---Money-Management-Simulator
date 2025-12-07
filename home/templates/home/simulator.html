@@ -106,6 +106,18 @@
                             </div>
                         </div>
 
+                        <div class="setup-section r-counter-reset">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="enableRCounterReset" checked style="width: auto;">
+                                <span>Remettre à zéro le compteur R quand DD supérieur à</span>
+                            </label>
+                            <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                                <input type="number" id="resetDdThreshold" value="30" min="0" max="100" step="5" style="width: 100px;">
+                                <span>%</span>
+                                <button id="disableReset" class="btn-na" style="margin-left: 10px; padding: 5px 15px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">N/A</button>
+                            </div>
+                        </div>
+
                         <button id="startBtn" class="start-btn">🚀 Commencer la Simulation</button>
                     </div>
                 </div>
@@ -201,6 +213,12 @@
                         <div class="stat-item">
                             <div class="stat-label">Max Perf.</div>
                             <div class="stat-value positive" id="maxPerf">0%</div>
+                        </div>
+                    </div>
+                    <div class="stat-row" style="border-top: 2px solid #667eea; padding-top: 15px; margin-top: 15px;">
+                        <div class="stat-item">
+                            <div class="stat-label">📊 Compteur R Cumulatif</div>
+                            <div class="stat-value" id="rCounter" style="color: #667eea; font-weight: bold; font-size: 1.3em;">0.00R</div>
                         </div>
                     </div>
                 </div>

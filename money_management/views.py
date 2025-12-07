@@ -10,6 +10,7 @@ from django.db.models import Avg, Max, Min, Count
 from decimal import Decimal
 import json
 import uuid
+import hashlib
 
 from .strategies import STRATEGIES
 from .simulator import run_simulation
@@ -240,6 +241,12 @@ def run_batch_simulations(request):
             strategy_info = STRATEGIES[strategy_key]
             strategy_function = strategy_info['function']
             
+            # Générer un identifiant unique incluant les paramètres
+            # Hash MD5 des paramètres pour différencier les variations
+            params_str = json.dumps(params, sort_keys=True)
+            params_hash = hashlib.md5(params_str.encode()).hexdigest()[:8]
+            unique_strategy_key = f"{strategy_key}_{params_hash}"
+            
             # Utiliser le preset balanced par défaut si outcomes_config n'est pas fourni
             if outcomes_config is None:
                 outcomes_config = {
@@ -348,7 +355,7 @@ def run_batch_simulations(request):
                         
                         sim_result = SimulationResult.objects.create(
                             strategy_name=strategy_info['name'],
-                            strategy_key=strategy_key,
+                            strategy_key=unique_strategy_key,
                             parameters=params,
                             num_trades=num_trades,
                             initial_capital=Decimal(str(initial_capital)),

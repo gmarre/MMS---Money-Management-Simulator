@@ -2,6 +2,23 @@ from django.db import models
 import json
 
 
+class StrategyReference(models.Model):
+    """Stocke les paramètres de référence pour chaque stratégie"""
+    
+    strategy_key = models.CharField(max_length=50, unique=True)
+    strategy_name = models.CharField(max_length=100)
+    reference_params = models.JSONField()  # Paramètres sauvegardés comme référence
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['strategy_key']
+    
+    def __str__(self):
+        return f"{self.strategy_name} - Paramètres de référence"
+
+
 class SimulationResult(models.Model):
     """Stocke les résultats d'une simulation individuelle"""
     

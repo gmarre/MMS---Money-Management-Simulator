@@ -738,6 +738,7 @@
                 currentData = Object.entries(data.strategies).map(([key, strategy]) => ({
                     key: key,
                     name: strategy.strategy_name,
+                    parameters: strategy.parameters,
                     num_sims: strategy.num_simulations,
                     perf_median: strategy.performance.median,
                     perf_avg: strategy.performance.avg,
@@ -824,10 +825,17 @@
             resultsBody.innerHTML = currentData.map(row => {
                 const perfClass = row.perf_median > 0 ? 'perf-positive' : 'perf-negative';
                 const ddClass = row.dd_avg > -20 ? 'dd-good' : (row.dd_avg > -35 ? 'dd-warning' : 'dd-danger');
+                
+                // Formater les paramètres pour affichage
+                const paramsStr = Object.entries(row.parameters || {})
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(', ');
+                const displayName = paramsStr ? `${row.name} (${paramsStr})` : row.name;
+                const tooltip = `Cliquer pour voir les détails des ${row.num_sims} simulations\nParamètres: ${paramsStr || 'aucun'}`;
 
                 return `
-                    <tr onclick="showStrategyDetails('${row.key}', '${row.name}')" title="Cliquer pour voir les détails des ${row.num_sims} simulations">
-                        <td class="strategy-name">${row.name} 🔍</td>
+                    <tr onclick="showStrategyDetails('${row.key}', '${row.name}')" title="${tooltip}">
+                        <td class="strategy-name">${displayName} 🔍</td>
                         <td>${row.num_sims}</td>
                         <td class="${perfClass}">${row.perf_median.toFixed(2)}%</td>
                         <td class="${perfClass}">${row.perf_avg.toFixed(2)}%</td>

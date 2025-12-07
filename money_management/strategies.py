@@ -296,7 +296,7 @@ def strategy_13_serie_gains(history, capital, base_risk=1.0, gain_streak=3, boos
     return boosted_risk if consecutive_wins else base_risk
 
 
-def strategy_14_heat_ramp(history, capital, base_risk=1.0, ramp_factor=0.1, streak_limit=5):
+def strategy_14_heat_ramp(history, capital, base_risk=1.0, ramp_factor=0.1, streak_limit=5, max_risk=5.0):
     """
     Heat Ramp : augmente progressivement le risque avec les gains
     
@@ -304,6 +304,15 @@ def strategy_14_heat_ramp(history, capital, base_risk=1.0, ramp_factor=0.1, stre
         base_risk: Risque de base en % (défaut: 1.0%)
         ramp_factor: Augmentation par gain consécutif (défaut: 0.1%)
         streak_limit: Limite de la série (défaut: 5)
+        max_risk: Risque maximum autorisé (défaut: 5.0%)
+    
+    Exemple: base_risk=1.0, ramp_factor=0.2, streak_limit=5
+    - 0 gains: 1.0%
+    - 1 gain: 1.2%
+    - 2 gains: 1.4%
+    - 3 gains: 1.6%
+    - 4 gains: 1.8%
+    - 5 gains: 2.0% (plafond atteint)
     """
     if not history:
         return base_risk
@@ -316,7 +325,9 @@ def strategy_14_heat_ramp(history, capital, base_risk=1.0, ramp_factor=0.1, stre
             break
     
     consecutive_wins = min(consecutive_wins, streak_limit)
-    return base_risk + (consecutive_wins * ramp_factor)
+    risk = base_risk + (consecutive_wins * ramp_factor)
+    
+    return min(risk, max_risk)
 
 
 def strategy_15_volatilite_interne(history, capital, base_risk=1.0, window=10, vol_factor=0.5):
@@ -513,6 +524,84 @@ def strategy_20_modele_lineaire_3_signaux(history, capital, base_risk=1.0, a=0.3
     return max(0.25 * base_risk, base_risk * (1.0 - 0.75 * risk_reduction))
 
 
+def strategy_21_r_counter(history, capital, base_risk=1.0, step_1=5, step_2=10, step_3=15, 
+                           risk_neutral=1.0, risk_up_1=1.5, risk_up_2=2.0, risk_up_3=3.0,
+                           risk_down_1=0.5, risk_down_2=0.25, risk_down_3=0.1, reset_dd_threshold=30):
+    """
+    R-Counter : compteur cumulatif des gains/pertes en R avec remise à zéro sur DD
+    
+    Le compteur accumule les résultats en R : +3R → compteur +3, -2R → compteur -2
+    Le risque s'ajuste par paliers selon la valeur du compteur.
+    Le compteur se remet à zéro si le drawdown dépasse un certain seuil.
+    
+    Params:
+        base_risk: Non utilisé (compatibility)
+        step_1: Premier palier (défaut: 5R)
+        step_2: Deuxième palier (défaut: 10R)
+        step_3: Troisième palier (défaut: 15R)
+        risk_neutral: Risque entre -step_1 et +step_1 (défaut: 1.0%)
+        risk_up_1: Risque entre +step_1 et +step_2 (défaut: 1.5%)
+        risk_up_2: Risque entre +step_2 et +step_3 (défaut: 2.0%)
+        risk_up_3: Risque > +step_3 (défaut: 3.0%)
+        risk_down_1: Risque entre -step_1 et -step_2 (défaut: 0.5%)
+        risk_down_2: Risque entre -step_2 et -step_3 (défaut: 0.25%)
+        risk_down_3: Risque < -step_3 (défaut: 0.1%)
+        reset_dd_threshold: Seuil DD (%) pour remettre compteur à zéro (défaut: 30%)
+    
+    Exemple avec paliers par défaut :
+    - Compteur entre -5 et +5R : risque = 1.0%
+    - Compteur entre +5 et +10R : risque = 1.5%
+    - Compteur entre +10 et +15R : risque = 2.0%
+    - Compteur > +15R : risque = 3.0%
+    - Compteur entre -5 et -10R : risque = 0.5%
+    - Compteur entre -10 et -15R : risque = 0.25%
+    - Compteur < -15R : risque = 0.1%
+    - Si DD > 30% : compteur remis à zéro (protection contre spirale négative)
+    """
+    # Calculer le compteur R en tenant compte des resets pendant l'historique
+    r_counter = 0
+    peak = 0
+    
+    if history:
+        for i, trade in enumerate(history):
+            # Mettre à jour le peak
+            if i == 0:
+                peak = trade['capital_before']
+            if trade['capital_after'] > peak:
+                peak = trade['capital_after']
+            
+            # Calculer le DD après ce trade
+            dd = ((trade['capital_after'] - peak) / peak) * 100
+            
+            # Si le DD dépasse le seuil, remettre le compteur à zéro
+            if dd < -reset_dd_threshold:
+                r_counter = 0
+            
+            # Ajouter le résultat du trade au compteur
+            r_counter += trade['outcome_multiplier']
+        
+        # Vérifier aussi le DD actuel (après le dernier trade)
+        current_dd = ((capital - peak) / peak) * 100
+        if current_dd < -reset_dd_threshold:
+            r_counter = 0
+    
+    # Déterminer le risque selon les paliers
+    if r_counter >= step_3:
+        return risk_up_3
+    elif r_counter >= step_2:
+        return risk_up_2
+    elif r_counter >= step_1:
+        return risk_up_1
+    elif r_counter > -step_1:
+        return risk_neutral
+    elif r_counter > -step_2:
+        return risk_down_1
+    elif r_counter > -step_3:
+        return risk_down_2
+    else:
+        return risk_down_3
+
+
 # Dictionnaire des stratégies pour accès facile
 STRATEGIES = {
     'strategy_1': {
@@ -596,7 +685,7 @@ STRATEGIES = {
     'strategy_14': {
         'name': 'Heat Ramp',
         'function': strategy_14_heat_ramp,
-        'params': {'base_risk': 1.0, 'ramp_factor': 0.1, 'streak_limit': 5},
+        'params': {'base_risk': 1.0, 'ramp_factor': 0.1, 'streak_limit': 5, 'max_risk': 5.0},
         'description': 'Augmente progressivement avec les gains'
     },
     'strategy_15': {
@@ -634,5 +723,18 @@ STRATEGIES = {
         'function': strategy_20_modele_lineaire_3_signaux,
         'params': {'base_risk': 1.0, 'a': 0.3, 'b': 0.4, 'c': 0.3},
         'description': 'Combine DD, streak et volatilité'
+    },
+    'strategy_21': {
+        'name': 'R-Counter',
+        'function': strategy_21_r_counter,
+        'params': {
+            'base_risk': 1.0,
+            'step_1': 5, 'step_2': 10, 'step_3': 15,
+            'risk_neutral': 1.0,
+            'risk_up_1': 1.5, 'risk_up_2': 2.0, 'risk_up_3': 3.0,
+            'risk_down_1': 0.5, 'risk_down_2': 0.25, 'risk_down_3': 0.1,
+            'reset_dd_threshold': 30
+        },
+        'description': 'Compteur cumulatif en R avec paliers et reset sur DD'
     }
 }

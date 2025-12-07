@@ -147,7 +147,7 @@ def execute_trade(request):
             
             # Récupérer l'historique pour le graphique
             trades_history = list(trading_session.trades.values(
-                'trade_number', 'capital_after', 'risk_percent'
+                'trade_number', 'capital_after', 'risk_percent', 'outcome_multiplier', 'profit_loss'
             ).order_by('trade_number'))
             
             return JsonResponse({
@@ -165,6 +165,9 @@ def execute_trade(request):
             })
             
         except Exception as e:
+            import traceback
+            print(f"❌ Error in execute_trade: {str(e)}")
+            print(traceback.format_exc())
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
@@ -270,7 +273,7 @@ def execute_batch_trades(request):
             
             # Récupérer l'historique pour le graphique
             trades_history = list(trading_session.trades.values(
-                'trade_number', 'capital_after', 'risk_percent'
+                'trade_number', 'capital_after', 'risk_percent', 'outcome_multiplier', 'profit_loss'
             ).order_by('trade_number'))
             
             return JsonResponse({
@@ -302,7 +305,7 @@ def get_stats(request):
         
         # Récupérer l'historique pour le graphique
         trades_history = list(trading_session.trades.values(
-            'trade_number', 'capital_after', 'risk_percent'
+            'trade_number', 'capital_after', 'risk_percent', 'outcome_multiplier', 'profit_loss'
         ).order_by('trade_number'))
         
         return JsonResponse({

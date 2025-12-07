@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeChart();
     initializeRiskChart();
     setupEventListeners();
+    setupRCounterResetControls();
     loadPresets();
     loadStrategies();
     loadStats();
@@ -111,6 +112,42 @@ async function loadStrategies() {
     }
 }
 
+// Configurer les contrôles de reset du compteur R
+function setupRCounterResetControls() {
+    const enableCheckbox = document.getElementById('enableRCounterReset');
+    const thresholdInput = document.getElementById('resetDdThreshold');
+    const naButton = document.getElementById('disableReset');
+    
+    // Activer/désactiver le champ de seuil
+    enableCheckbox.addEventListener('change', function() {
+        thresholdInput.disabled = !this.checked;
+        if (!this.checked) {
+            thresholdInput.style.opacity = '0.5';
+        } else {
+            thresholdInput.style.opacity = '1';
+        }
+    });
+    
+    // Bouton N/A désactive complètement le reset
+    naButton.addEventListener('click', function() {
+        enableCheckbox.checked = false;
+        thresholdInput.disabled = true;
+        thresholdInput.style.opacity = '0.5';
+    });
+}
+
+// Récupérer la valeur du seuil de reset DD pour le compteur R
+function getResetDdThreshold() {
+    const enableCheckbox = document.getElementById('enableRCounterReset');
+    const thresholdInput = document.getElementById('resetDdThreshold');
+    
+    if (!enableCheckbox.checked) {
+        return null; // Pas de reset
+    }
+    
+    return parseFloat(thresholdInput.value) || 30;
+}
+
 // Afficher les stratégies dans la grille
 function displayStrategies() {
     const grid = document.getElementById('strategiesGrid');
@@ -150,6 +187,14 @@ function displayStrategyParams(strategyInfo, number) {
     
     let html = `<h4>⚙️ Stratégie S${number}: ${strategyInfo.name}</h4>`;
     html += `<p style="color: #888; margin-bottom: 15px; font-size: 0.9rem;">${strategyInfo.description}</p>`;
+    
+    // Boutons de référence
+    html += `
+        <div class="reference-buttons">
+            <button class="btn-reference btn-save" onclick="saveReferenceParamsSimulator()">💾 Sauvegarder comme référence</button>
+            <button class="btn-reference btn-load" onclick="loadReferenceParamsSimulator()">📂 Charger référence</button>
+        </div>
+    `;
     
     // Créer les inputs pour chaque paramètre
     for (const [paramName, defaultValue] of Object.entries(strategyInfo.params)) {
@@ -604,6 +649,28 @@ function updateStats(stats) {
     document.getElementById('maxDrawdown').textContent = `${stats.max_drawdown.toFixed(2)}%`;
     document.getElementById('maxPerf').textContent = `${stats.max_performance.toFixed(2)}%`;
     
+    // Compteur R cumulatif
+    if (stats.r_counter !== undefined) {
+        const rCounterEl = document.getElementById('rCounter');
+        const rValue = stats.r_counter;
+        rCounterEl.textContent = `${rValue >= 0 ? '+' : ''}${rValue.toFixed(2)}R`;
+        
+        // Coloration selon la valeur
+        if (rValue > 10) {
+            rCounterEl.style.color = '#28a745'; // Vert foncé
+        } else if (rValue > 5) {
+            rCounterEl.style.color = '#4CAF50'; // Vert
+        } else if (rValue > 0) {
+            rCounterEl.style.color = '#667eea'; // Bleu
+        } else if (rValue > -5) {
+            rCounterEl.style.color = '#ffc107'; // Orange
+        } else if (rValue > -10) {
+            rCounterEl.style.color = '#ff6b6b'; // Rouge clair
+        } else {
+            rCounterEl.style.color = '#e74c3c'; // Rouge foncé
+        }
+    }
+    
     // Mettre à jour la distribution des issues
     updateOutcomeDistribution(stats.outcome_distribution || {}, stats.total_trades);
 }
@@ -657,7 +724,7 @@ function initializeChart() {
         data: {
             labels: [0],
             datasets: [{
-                label: 'Capital',
+                label: 'Capital (€)',
                 data: [1000],
                 borderColor: '#4CAF50',
                 backgroundColor: 'rgba(76, 175, 80, 0.1)',
@@ -699,10 +766,15 @@ function initializeChart() {
                         color: 'rgba(255, 255, 255, 0.1)'
                     },
                     ticks: {
-                        color: '#888',
+                        color: '#4CAF50',
                         callback: function(value) {
                             return '€' + value.toFixed(0);
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Capital (€)',
+                        color: '#4CAF50'
                     }
                 }
             },
@@ -725,10 +797,10 @@ function updateChart(history) {
     const labels = history.map(t => t.trade_number);
     
     // Data: capital après chaque trade
-    const data = history.map(t => t.capital_after);
+    const capitalData = history.map(t => t.capital_after);
     
     equityChart.data.labels = labels;
-    equityChart.data.datasets[0].data = data;
+    equityChart.data.datasets[0].data = capitalData;
     equityChart.update();
     
     // Mettre à jour aussi le graphique du risque adaptatif
@@ -780,6 +852,18 @@ function initializeRiskChart() {
                     pointRadius: 0,
                     pointHoverRadius: 4,
                     yAxisID: 'y2'
+                },
+                {
+                    label: 'Compteur R',
+                    data: [0],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y3'
                 }
             ]
         },
@@ -899,6 +983,26 @@ function initializeRiskChart() {
                             return Math.round(value);
                         }
                     }
+                },
+                y3: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Compteur R',
+                        color: '#28a745'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#28a745',
+                        callback: function(value) {
+                            return value.toFixed(1) + 'R';
+                        }
+                    }
                 }
             },
             interaction: {
@@ -920,15 +1024,15 @@ function updateRiskChart(history) {
     const riskData = [];
     const drawdownData = [];
     const consecutiveLossesData = [];
+    const rCounterData = [];
     
     // Peak = le plus-haut historique atteint jusqu'à présent
     let peak = 0;
     let consecutiveLosses = 0;
+    let cumulativeR = 0;
     
-    // DEBUG: Afficher les 5 premiers trades pour vérifier
-    console.log('=== DEBUG DRAWDOWN ===');
-    console.log('Premier trade:', history[0]);
-    console.log('Nombre total de trades:', history.length);
+    // Récupérer le seuil de reset DD depuis l'interface utilisateur
+    const resetDdThreshold = getResetDdThreshold();
     
     // Parcourir l'historique pour construire les données
     history.forEach((trade, index) => {
@@ -941,7 +1045,6 @@ function updateRiskChart(history) {
         // Au premier trade, initialiser le peak
         if (index === 0) {
             peak = currentCapital;
-            console.log(`Trade ${index + 1}: Capital=${currentCapital}, Peak initialisé=${peak}`);
         }
         
         // Mettre à jour le peak si on atteint un nouveau sommet
@@ -959,10 +1062,15 @@ function updateRiskChart(history) {
         const drawdown = ((currentCapital - peak) / peak) * 100;
         drawdownData.push(drawdown);
         
-        // Debug pour les 5 premiers et derniers trades
-        if (index < 5 || index >= history.length - 5) {
-            console.log(`Trade ${index + 1}: Capital=${currentCapital.toFixed(2)}, Peak=${peak.toFixed(2)}, DD=${drawdown.toFixed(2)}%`);
+        // ⚠️ RESET DU COMPTEUR R SI LE DD DÉPASSE LE SEUIL (seulement si activé)
+        if (resetDdThreshold !== null && drawdown < -resetDdThreshold) {
+            cumulativeR = 0;
         }
+        
+        // Calculer le compteur R cumulatif
+        const outcomeMultiplier = parseFloat(trade.outcome_multiplier);
+        cumulativeR += outcomeMultiplier;
+        rCounterData.push(cumulativeR);
         
         // Calculer les pertes consécutives (basé sur la variation du capital)
         if (index > 0) {
@@ -976,15 +1084,73 @@ function updateRiskChart(history) {
         consecutiveLossesData.push(consecutiveLosses);
     });
     
-    console.log('Peak final:', peak);
-    console.log('Drawdown min:', Math.min(...drawdownData).toFixed(2) + '%');
-    console.log('Drawdown max:', Math.max(...drawdownData).toFixed(2) + '%');
-    console.log('======================');
-    
     // Mettre à jour le graphique
     riskChart.data.labels = labels;
     riskChart.data.datasets[0].data = riskData;
     riskChart.data.datasets[1].data = drawdownData;
     riskChart.data.datasets[2].data = consecutiveLossesData;
+    riskChart.data.datasets[3].data = rCounterData;
     riskChart.update();
+}
+
+// Sauvegarder les paramètres de référence depuis le simulateur
+async function saveReferenceParamsSimulator() {
+    if (!selectedStrategy || selectedStrategy === 'none') {
+        alert('Aucune stratégie sélectionnée');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/money-management/reference/${selectedStrategy}/save/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                params: strategyParams
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ ${result.message}`);
+        } else {
+            alert(`❌ Erreur: ${result.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Erreur de sauvegarde: ${error.message}`);
+    }
+}
+
+// Charger les paramètres de référence depuis le simulateur
+async function loadReferenceParamsSimulator() {
+    if (!selectedStrategy || selectedStrategy === 'none') {
+        alert('Aucune stratégie sélectionnée');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/money-management/reference/${selectedStrategy}/load/`);
+        const result = await response.json();
+        
+        if (result.success) {
+            // Mettre à jour strategyParams
+            strategyParams = result.params;
+            
+            // Mettre à jour les inputs
+            for (const [paramName, value] of Object.entries(result.params)) {
+                const input = document.getElementById(`param_${paramName}`);
+                if (input) {
+                    input.value = value;
+                }
+            }
+            
+            alert('✅ Paramètres de référence chargés');
+        } else {
+            alert(`ℹ️ ${result.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Erreur de chargement: ${error.message}`);
+    }
 }

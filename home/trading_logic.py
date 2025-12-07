@@ -157,6 +157,11 @@ class TradingSimulator:
         avg_risk_amount = trades_queryset.aggregate(Avg('risk_amount'))['risk_amount__avg'] or 0
         avg_profit_loss = trades_queryset.aggregate(Avg('profit_loss'))['profit_loss__avg'] or 0
         
+        # Calculer le compteur R cumulatif
+        r_counter = 0
+        for trade in trades_queryset:
+            r_counter += float(trade.outcome_multiplier)
+        
         return {
             'total_trades': total_trades,
             'wins': wins,
@@ -177,4 +182,5 @@ class TradingSimulator:
             'avg_risk_amount': round(float(avg_risk_amount), 2),
             'avg_profit_loss': round(float(avg_profit_loss), 2),
             'outcome_distribution': outcome_counts,
+            'r_counter': round(r_counter, 2),
         }

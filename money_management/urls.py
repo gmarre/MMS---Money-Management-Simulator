@@ -4,6 +4,7 @@ URLs pour le module Money Management
 
 from django.urls import path
 from . import views
+from . import views_reference
 
 app_name = 'money_management'
 
@@ -27,4 +28,9 @@ urlpatterns = [
     
     # API: Endpoint générique pour exécuter une stratégie
     path('simulate/<str:strategy_name>/', views.simulate_strategy, name='simulate_strategy'),
+    
+    # API: Gestion des paramètres de référence
+    path('reference/<str:strategy_key>/save/', views_reference.save_reference_params, name='save_reference'),
+    path('reference/<str:strategy_key>/load/', views_reference.load_reference_params, name='load_reference'),
+    path('reference/<str:strategy_key>/delete/', views_reference.delete_reference_params, name='delete_reference'),
 ]

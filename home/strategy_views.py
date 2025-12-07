@@ -178,7 +178,7 @@ def execute_strategy_batch(request):
     # Récupérer TOUS les trades pour l'equity curve et le graphique de risque
     # Utiliser values() pour être cohérent avec les autres endpoints
     history = list(Trade.objects.filter(session=session).values(
-        'trade_number', 'capital_after', 'risk_percent'
+        'trade_number', 'capital_after', 'risk_percent', 'outcome_multiplier', 'profit_loss'
     ).order_by('trade_number'))
     
     return JsonResponse({
